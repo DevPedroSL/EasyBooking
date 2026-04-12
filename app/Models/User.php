@@ -21,6 +21,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
+        'barbershop_id',
     ];
 
     /**
@@ -44,5 +46,23 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Relationships
+     */
+    public function barbershop()
+    {
+        return $this->belongsTo(Barbershop::class);
+    }
+
+    public function appointmentsAsClient()
+    {
+        return $this->hasMany(Appointments::class, 'client_id');
+    }
+
+    public function appointmentsAsBarbershop()
+    {
+        return $this->hasMany(Appointments::class, 'barbershop_id');
     }
 }

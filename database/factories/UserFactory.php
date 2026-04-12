@@ -29,6 +29,8 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
+            'role' => fake()->randomElement(['admin', 'barber', 'customer']),
+            'barbershop_id' => null, // Will be set in seeder or state
         ];
     }
 
