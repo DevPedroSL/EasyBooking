@@ -17,8 +17,8 @@ return [
     | the channels present in the list of "channels" configured below.
     |
     */
-
-    'default' => env('LOG_CHANNEL', 'stack'),
+    
+    'default' => env('LOG_CHANNEL', 'null'),
 
     /*
     |--------------------------------------------------------------------------
@@ -59,8 +59,7 @@ return [
         ],
 
         'single' => [
-            'driver' => 'single',
-            'path' => storage_path('logs/laravel.log'),
+            'driver' => 'syslog',
             'level' => env('LOG_LEVEL', 'debug'),
             'replace_placeholders' => true,
         ],

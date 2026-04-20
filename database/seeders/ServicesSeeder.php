@@ -15,6 +15,7 @@ class ServicesSeeder extends Seeder
      */
     public function run(): void
     {
-        Services::factory(5)->create();
+        // Services are now created in BarbershopSeeder
+        // Services::factory(5)->create();
     }
 }

@@ -29,9 +29,9 @@
             </div>
             <div class="text-right ml-4">
               <span class="block text-xl font-bold text-gray-900 mb-2">{{ $service->price }}€</span>
-              <button class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity shadow-lg shadow-indigo-200">
+              <a href="{{ route('appointments.create', ['barbershop' => $barbershop, 'service' => $service]) }}" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity shadow-lg shadow-indigo-200">
                 Reservar
-              </button>
+              </a>
             </div>
           </div>
         @endforeach

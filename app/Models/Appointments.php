@@ -12,6 +12,7 @@ class Appointments extends Model
         'client_id',
         'barbershop_id',
         'service_id',
+        'appointment_date',
         'start_time',
         'end_time',
         'status',
@@ -34,7 +35,7 @@ class Appointments extends Model
 
     public function barbershop()
     {
-        return $this->belongsTo(User::class, 'barbershop_id'); // Assuming barbershop_id is to users, as per migration
+        return $this->belongsTo(Barbershop::class);
     }
 
     public function service()

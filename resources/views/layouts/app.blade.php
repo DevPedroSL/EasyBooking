@@ -12,7 +12,8 @@
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
         <!-- Scripts -->
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
+        <link rel="stylesheet" href="/build/assets/app-KvhA-aWd.css">
+        <script src="/build/assets/app-BIJoUbyE.js"></script>
     </head>
     <body class="bg-gray-100">
         <nav class="bg-gray-50 border-b border-gray-100 sticky top-0 z-50">
@@ -34,18 +35,32 @@
         @endguest
         
         @auth
-          <a href="{{ route('dashboard') }}" class="text-sm font-medium text-gray-700 hover:text-indigo-600">Mis Citas</a>
-          <a href="{{ route('dashboard') }}" class="text-sm font-medium text-gray-700 hover:text-indigo-600">Dashboard</a>
+          <a href="{{ route('appointments.my') }}" class="text-sm font-medium text-gray-700 hover:text-indigo-600">Mis Citas</a>
+          @if(!auth()->user()->barbershop)
+            <a href="{{ route('barbershops.create') }}" class="text-sm font-medium text-gray-700 hover:text-indigo-600">Crear mi propia barbería</a>
+          @else
+            <a href="{{ route('barbershops.editMy') }}" class="text-sm font-medium text-gray-700 hover:text-indigo-600">Gestionar mi barbería</a>
+          @endif
+          @if(auth()->user()->barbershop)
+            <a href="{{ route('appointments.barber') }}" class="inline-block bg-indigo-600 text-white px-3 py-1 rounded-md text-sm font-medium hover:bg-indigo-700 transition-colors">Gestionar Citas</a>
+          @endif
           @if(auth()->user()->role === 'admin')
             <a href="{{ route('admin.barbershops.index') }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-800 font-bold">Gestionar Barberías</a>
           @endif
-          <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form-nav').submit();" class="text-sm font-medium text-gray-700 hover:text-indigo-600">Cerrar Sesión</a>
         @endauth
       </div>
 
       @auth
-        <div class="flex items-center gap-4">
-          <img class="h-8 w-8 rounded-full border border-gray-200" src="https://ui-avatars.com/api/?name={{ auth()->user()->name }}" alt="Perfil">
+        <div class="relative">
+          <button id="user-menu-button" class="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-indigo-600" onclick="toggleDropdown()">
+            <img class="h-8 w-8 rounded-full border border-gray-200" src="https://ui-avatars.com/api/?name={{ auth()->user()->name }}" alt="Perfil">
+            <span>{{ auth()->user()->name }}</span>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+          </button>
+          <div id="user-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50">
+            <a href="{{ route('profile.edit') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Editar Perfil</a>
+            <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form-nav').submit();" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Cerrar Sesión</a>
+          </div>
         </div>
       @endauth
     </div>
@@ -57,5 +72,21 @@
 </form>
 
         @yield('content')
+
+        <script>
+        function toggleDropdown() {
+          const dropdown = document.getElementById('user-dropdown');
+          dropdown.classList.toggle('hidden');
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+          const dropdown = document.getElementById('user-dropdown');
+          const button = document.getElementById('user-menu-button');
+          if (button && !button.contains(event.target)) {
+            dropdown.classList.add('hidden');
+          }
+        });
+        </script>
     </body>
 </html>

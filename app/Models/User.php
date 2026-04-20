@@ -53,7 +53,7 @@ class User extends Authenticatable
      */
     public function barbershop()
     {
-        return $this->belongsTo(Barbershop::class);
+        return $this->hasOne(Barbershop::class, 'barber_id');
     }
 
     public function appointmentsAsClient()
