@@ -3,14 +3,17 @@
 @section('title', 'Mis Citas')
 
 @section('content')
-<div class="max-w-4xl mx-auto py-10 px-4">
-  <div class="mb-8">
-    <h1 class="text-3xl font-bold text-gray-900">Mis Citas</h1>
+<div class="page-shell max-w-4xl">
+  <div class="page-heading">
+    <div>
+      <h1 class="page-title">Mis Citas</h1>
+      <p class="page-subtitle">Tus reservas activas y su estado.</p>
+    </div>
   </div>
 
   <div class="space-y-4">
     @forelse($appointments as $appointment)
-      <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+      <div class="eb-card">
         <div class="flex justify-between items-start">
           <div>
             <h3 class="text-xl font-semibold text-gray-800">{{ $appointment->barbershop->name }}</h3>

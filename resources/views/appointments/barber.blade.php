@@ -3,8 +3,13 @@
 @section('title', 'Mis Citas - ' . $barbershop->name)
 
 @section('content')
-<div class="container mx-auto px-4 py-8">
-    <h1 class="text-3xl font-bold text-gray-900 mb-8">Citas de {{ $barbershop->name }}</h1>
+<div class="page-shell">
+    <div class="page-heading">
+        <div>
+            <h1 class="page-title">Citas de {{ $barbershop->name }}</h1>
+            <p class="page-subtitle">Gestiona solicitudes, horas aceptadas y rechazos desde una sola mesa.</p>
+        </div>
+    </div>
 
     @if(session('success'))
         <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-6">
@@ -12,9 +17,9 @@
         </div>
     @endif
 
-    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+    <div class="eb-panel overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200">
-            <h2 class="text-xl font-semibold text-gray-800">Citas Pendientes y Confirmadas</h2>
+            <h2 class="text-xl font-black text-gray-900">Citas Pendientes y Confirmadas</h2>
         </div>
 
         <div class="overflow-x-auto">

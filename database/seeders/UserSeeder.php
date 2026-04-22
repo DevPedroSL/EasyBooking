@@ -28,8 +28,8 @@ class UserSeeder extends Seeder
         // Create specific barbers
         $barber1 = User::create([
             'name' => 'Carlos Martínez',
-            'email' => 'carlos@example.com',
-            'password' => Hash::make('password'),
+            'email' => 'barber@example.com',
+            'password' => Hash::make('123'),
             'role' => 'barber',
             'email_verified_at' => now(),
         ]);
@@ -37,7 +37,7 @@ class UserSeeder extends Seeder
         $barber2 = User::create([
             'name' => 'Javier López',
             'email' => 'javier@example.com',
-            'password' => Hash::make('password'),
+            'password' => Hash::make('123'),
             'role' => 'barber',
             'email_verified_at' => now(),
         ]);
@@ -45,12 +45,21 @@ class UserSeeder extends Seeder
         $barber3 = User::create([
             'name' => 'Antonio García',
             'email' => 'antonio@example.com',
-            'password' => Hash::make('password'),
+            'password' => Hash::make('123'),
             'role' => 'barber',
             'email_verified_at' => now(),
         ]);
 
+        // Create a specific customer
+        User::create([
+            'name' => 'Customer User',
+            'email' => 'customer@example.com',
+            'password' => Hash::make('123'),
+            'role' => 'customer',
+            'email_verified_at' => now(),
+        ]);
+
         // Create some customers
-        User::factory(10)->create(['role' => 'customer']);
+        User::factory(9)->create(['role' => 'customer']);
     }
 }

@@ -16,7 +16,7 @@ class BarbershopSeeder extends Seeder
     public function run(): void
     {
         // Get the specific barbers
-        $carlos = \App\Models\User::where('email', 'carlos@example.com')->first();
+        $carlos = \App\Models\User::where('email', 'barber@example.com')->first();
         $javier = \App\Models\User::where('email', 'javier@example.com')->first();
         $antonio = \App\Models\User::where('email', 'antonio@example.com')->first();
 

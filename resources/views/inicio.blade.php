@@ -3,16 +3,27 @@
 @section('title', 'Inicio - EasyBooking')
 
 @section('content')
-<div class="container mx-auto px-4 py-8">
-    <h1 class="text-3xl font-bold text-gray-900 mb-8">Barberías Disponibles</h1>
+<div class="page-shell">
+    <div class="page-heading">
+        <div>
+            <h1 class="page-title">Barberías Disponibles</h1>
+            <p class="page-subtitle">Elige local, servicio y hora sin perder la tarde buscando huecos.</p>
+        </div>
+        <span class="hidden sm:inline-flex px-3 py-2 rounded-md text-sm font-bold text-emerald-950 bg-amber-200">
+            {{ $barbershops->count() }} locales
+        </span>
+    </div>
     
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         @foreach($barbershops as $barbershop)
-        <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
-            <h2 class="text-xl font-semibold text-gray-800 mb-2">{{ $barbershop->name }}</h2>
-            <p class="text-gray-600 mb-4">{{ $barbershop->description ?? 'Servicio de barbería profesional' }}</p>
+        <div class="eb-card transition">
+            <div class="mb-5">
+                <h2 class="text-xl font-black text-gray-900">{{ $barbershop->name }}</h2>
+            </div>
+            <p class="text-gray-600 mb-5 min-h-16">{{ $barbershop->Description ?? 'Servicio de barbería profesional' }}</p>
+            <p class="text-sm font-semibold text-gray-700 mb-5">{{ $barbershop->address }}</p>
             <a href="{{ route('barbershop', $barbershop->name) }}" 
-               class="inline-block bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors">
+               class="eb-button">
                 Ver Servicios
             </a>
         </div>

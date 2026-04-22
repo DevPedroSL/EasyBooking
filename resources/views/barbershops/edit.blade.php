@@ -3,8 +3,9 @@
 @section('title', 'Editar Barbería')
 
 @section('content')
-<div class="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-md">
-    <h1 class="text-2xl font-bold mb-6">Editar Mi Barbería</h1>
+<div class="page-shell max-w-4xl">
+<div class="eb-panel p-6">
+    <h1 class="text-3xl font-black text-gray-900 mb-6">Editar Mi Barbería</h1>
 
     @if ($errors->any())
         <div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
@@ -124,5 +125,6 @@
             <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">Actualizar Barbería y Servicios</button>
         </div>
     </form>
+</div>
 </div>
 @endsection

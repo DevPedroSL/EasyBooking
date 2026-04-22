@@ -1,3 +1,222 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+    --eb-ink: #18211e;
+    --eb-forest: #203b31;
+    --eb-moss: #2f6b4f;
+    --eb-gold: #c59b3a;
+    --eb-paper: #eef4ef;
+    --eb-surface: #fbfaf4;
+    --eb-surface-strong: #f4efe2;
+    --eb-line: #d8dfd5;
+}
+
+body.eb-body {
+    min-height: 100vh;
+    background:
+        linear-gradient(180deg, rgba(32, 59, 49, 0.10), rgba(238, 244, 239, 0) 280px),
+        var(--eb-paper);
+    color: var(--eb-ink);
+}
+
+.app-main {
+    min-height: calc(100vh - 4rem);
+}
+
+.app-nav {
+    background: var(--eb-ink);
+    border-bottom: 3px solid var(--eb-gold);
+    box-shadow: 0 14px 35px rgba(24, 33, 30, 0.18);
+}
+
+.brand-mark {
+    background: var(--eb-gold);
+    color: var(--eb-ink);
+    border-radius: 8px;
+}
+
+.brand-name,
+.app-nav a,
+.app-nav button {
+    color: #edf7f1;
+}
+
+.brand-name span,
+.app-nav a:hover,
+.app-nav button:hover {
+    color: #f3cf73;
+}
+
+.app-nav .nav-action {
+    background: var(--eb-gold);
+    color: var(--eb-ink);
+    border-radius: 8px;
+    box-shadow: 0 8px 18px rgba(197, 155, 58, 0.24);
+}
+
+.app-nav .nav-action:hover {
+    background: #d9ad46;
+    color: var(--eb-ink);
+}
+
+.user-dropdown {
+    background: var(--eb-surface);
+    border: 1px solid rgba(24, 33, 30, 0.12);
+    border-radius: 8px;
+}
+
+.user-dropdown a,
+.user-dropdown button {
+    color: var(--eb-ink);
+}
+
+.user-dropdown a:hover,
+.user-dropdown button:hover {
+    background: var(--eb-surface-strong);
+    color: var(--eb-forest);
+}
+
+.page-shell {
+    width: min(1120px, calc(100% - 2rem));
+    margin: 0 auto;
+    padding: 2.5rem 0;
+}
+
+.page-heading {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.page-title {
+    color: var(--eb-ink);
+    font-size: clamp(2rem, 4vw, 3.25rem);
+    font-weight: 900;
+    letter-spacing: 0;
+    line-height: 1;
+}
+
+.page-subtitle {
+    color: #4f6259;
+    margin-top: 0.6rem;
+}
+
+.eb-card,
+.eb-panel {
+    background: var(--eb-surface);
+    border: 1px solid var(--eb-line);
+    border-radius: 8px;
+    box-shadow: 0 16px 32px rgba(24, 33, 30, 0.10);
+}
+
+.eb-card {
+    position: relative;
+    overflow: hidden;
+    padding: 1.5rem;
+}
+
+.eb-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 5px;
+    background: var(--eb-gold);
+}
+
+.eb-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 20px 38px rgba(24, 33, 30, 0.14);
+}
+
+.eb-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.5rem;
+    border-radius: 8px;
+    background: var(--eb-forest);
+    color: #fff;
+    font-weight: 800;
+    padding: 0.65rem 1rem;
+    transition: background-color 160ms ease, transform 160ms ease;
+}
+
+.eb-button:hover {
+    background: var(--eb-moss);
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+.eb-button-gold {
+    background: var(--eb-gold);
+    color: var(--eb-ink);
+}
+
+.eb-button-gold:hover {
+    background: #d9ad46;
+    color: var(--eb-ink);
+}
+
+.shop-hero {
+    background: var(--eb-forest);
+    border-radius: 8px;
+    color: #edf7f1;
+    padding: 2rem;
+    box-shadow: 0 18px 38px rgba(24, 33, 30, 0.18);
+}
+
+.shop-hero h1,
+.shop-hero p {
+    color: inherit;
+}
+
+.shop-avatar {
+    border: 4px solid var(--eb-gold);
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.22);
+}
+
+.service-row {
+    border: 1px solid rgba(47, 107, 79, 0.14);
+    border-radius: 8px;
+    background: #f7f5ec;
+}
+
+.service-row:hover {
+    background: #eef4ef;
+    border-color: rgba(47, 107, 79, 0.34);
+}
+
+.slot-choice {
+    display: block;
+    width: 100%;
+    border-radius: 8px;
+    border: 1px solid var(--eb-line);
+    background: #f7f5ec;
+    color: var(--eb-ink);
+    cursor: pointer;
+    padding: 0.55rem 0.75rem;
+    text-align: center;
+}
+
+.peer:checked + .slot-choice {
+    background: var(--eb-forest);
+    border-color: var(--eb-forest);
+    color: #fff;
+}
+
+body.eb-body .bg-white {
+    background-color: var(--eb-surface);
+}
+
+body.eb-body .bg-gray-50 {
+    background-color: #f2f6f2;
+}
+
+body.eb-body .border-gray-100,
+body.eb-body .border-gray-200 {
+    border-color: var(--eb-line);
+}
