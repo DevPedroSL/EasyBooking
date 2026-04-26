@@ -19,23 +19,19 @@ class AppointmentController extends Controller
             abort(404);
         }
 
-        $schedules = $barbershop->schedules;
-
-        // Get next 7 days
         $days = [];
-        $today = Carbon::today();
-        for ($i = 0; $i < 7; $i++) {
-            $date = $today->copy()->addDays($i);
-            $dayOfWeek = $date->dayOfWeekIso; // 1=Monday, 7=Sunday
-            $schedule = $schedules->where('day_of_week', $dayOfWeek)->first();
-            if ($schedule) {
-                $availableSlots = $this->getAvailableSlotsForService($barbershop, $date, $schedule, $service);
-                if (!empty($availableSlots)) {
-                    $days[] = [
-                        'date' => $date,
-                        'slots' => $availableSlots
-                    ];
-                }
+        $tomorrow = Carbon::tomorrow();
+        $schedule = $barbershop->schedules
+            ->where('day_of_week', $tomorrow->dayOfWeekIso)
+            ->first();
+
+        if ($schedule) {
+            $availableSlots = $this->getAvailableSlotsForService($barbershop, $tomorrow, $schedule, $service);
+            if (!empty($availableSlots)) {
+                $days[] = [
+                    'date' => $tomorrow,
+                    'slots' => $availableSlots
+                ];
             }
         }
 
@@ -170,8 +166,8 @@ class AppointmentController extends Controller
 
     private function getAvailableSlotsForService(Barbershop $barbershop, Carbon $date, $schedule, Services $service)
     {
-        $start = Carbon::createFromTimeString($schedule->start_time);
-        $end = Carbon::createFromTimeString($schedule->end_time);
+        $start = $date->copy()->setTimeFromTimeString($schedule->start_time);
+        $end = $date->copy()->setTimeFromTimeString($schedule->end_time);
 
         $slots = [];
 
@@ -182,6 +178,13 @@ class AppointmentController extends Controller
             ->get(['start_time', 'end_time']);
 
         $current = $start->copy();
+        if ($date->isToday() && $current->lessThan(now())) {
+            $current = now()->copy()->startOfHour();
+            if ($current->lessThan(now())) {
+                $current->addHour();
+            }
+        }
+
         while ($current->copy()->addMinutes($service->duration) <= $end) {
             $slotEnd = $current->copy()->addMinutes($service->duration);
             $available = true;
@@ -200,7 +203,7 @@ class AppointmentController extends Controller
                 $slots[] = $current->format('H:i');
             }
 
-            $current->addMinutes(15); // Check every 15 min
+            $current->addHour();
         }
 
         return $slots;
@@ -226,12 +229,39 @@ class AppointmentController extends Controller
         $startTime = Carbon::createFromFormat('Y-m-d H:i', $validated['datetime']);
         $endTime = $startTime->copy()->addMinutes($service->duration);
 
+        if (!$this->isSelectableSlot($barbershop, $service, $startTime)) {
+            throw ValidationException::withMessages([
+                'datetime' => 'El horario seleccionado no está disponible.',
+            ]);
+        }
+
         return [
             'validated' => $validated,
             'service' => $service,
             'startTime' => $startTime,
             'endTime' => $endTime,
         ];
+    }
+
+    private function isSelectableSlot(Barbershop $barbershop, Services $service, Carbon $startTime): bool
+    {
+        if (!$startTime->isSameDay(Carbon::tomorrow())) {
+            return false;
+        }
+
+        $schedule = $barbershop->schedules
+            ->where('day_of_week', $startTime->dayOfWeekIso)
+            ->first();
+
+        if (!$schedule) {
+            return false;
+        }
+
+        return in_array(
+            $startTime->format('H:i'),
+            $this->getAvailableSlotsForService($barbershop, $startTime->copy()->startOfDay(), $schedule, $service),
+            true
+        );
     }
 
     private function isSlotAvailable(Barbershop $barbershop, Carbon $startTime, Carbon $endTime): bool
