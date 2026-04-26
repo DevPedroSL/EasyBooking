@@ -22,10 +22,10 @@ class BarbershopSeeder extends Seeder
 
         // Create specific barbershops
         $barbershop1 = \App\Models\Barbershop::updateOrCreate([
-            'name' => 'Barbería El Corte Fino',
+            'name' => 'Barbería 1',
         ], [
             'barber_id' => $barber->id,
-            'Description' => 'Especialistas en cortes modernos y clásicos.',
+            'Description' => 'Cortes buenos',
             'address' => 'Calle 5, Madrid',
             'phone' => '612 345 678',
         ]);
@@ -35,16 +35,25 @@ class BarbershopSeeder extends Seeder
             'barbershop_id' => $barbershop1->id,
             'name' => 'Corte',
         ], [
-            'description' => 'Corte de cabello profesional',
+            'description' => 'Corte de pelo',
             'duration' => 30,
             'price' => 15.00,
         ]);
 
         \App\Models\Services::updateOrCreate([
             'barbershop_id' => $barbershop1->id,
+            'name' => 'Rulos',
+        ], [
+            'description' => 'Rulos permantentes',
+            'duration' => 60,
+            'price' => 25.00,
+        ]);
+
+        \App\Models\Services::updateOrCreate([
+            'barbershop_id' => $barbershop1->id,
             'name' => 'Tinte',
         ], [
-            'description' => 'Tinte de cabello completo',
+            'description' => 'Tinte',
             'duration' => 60,
             'price' => 35.00,
         ]);
@@ -61,10 +70,10 @@ class BarbershopSeeder extends Seeder
         }
 
         $barbershop2 = \App\Models\Barbershop::updateOrCreate([
-            'name' => 'Urban Style Barber',
+            'name' => 'Barbería 2',
         ], [
             'barber_id' => $javier->id,
-            'Description' => 'Estilo urbano, degradados y barba profesional.',
+            'Description' => 'Cortes muy buenos',
             'address' => 'Calle 10, Barcelona',
             'phone' => '634 987 321',
         ]);
@@ -74,7 +83,7 @@ class BarbershopSeeder extends Seeder
             'barbershop_id' => $barbershop2->id,
             'name' => 'Corte',
         ], [
-            'description' => 'Corte de cabello profesional',
+            'description' => 'Corte de pelo',
             'duration' => 30,
             'price' => 15.00,
         ]);
@@ -83,7 +92,7 @@ class BarbershopSeeder extends Seeder
             'barbershop_id' => $barbershop2->id,
             'name' => 'Tinte',
         ], [
-            'description' => 'Tinte de cabello completo',
+            'description' => 'Tinte',
             'duration' => 60,
             'price' => 35.00,
         ]);
@@ -100,10 +109,10 @@ class BarbershopSeeder extends Seeder
         }
 
         $barbershop3 = \App\Models\Barbershop::updateOrCreate([
-            'name' => 'Old School Barbershop',
+            'name' => 'Barbería 3',
         ], [
             'barber_id' => $antonio->id,
-            'Description' => 'Ambiente clásico con afeitado y corte tradicional.',
+            'Description' => 'Cortes de calidad',
             'address' => 'Calle 7, Jumilla, Murcia',
             'phone' => '655 112 233',
         ]);
@@ -113,7 +122,7 @@ class BarbershopSeeder extends Seeder
             'barbershop_id' => $barbershop3->id,
             'name' => 'Corte',
         ], [
-            'description' => 'Corte de cabello profesional',
+            'description' => 'Corte de pelo',
             'duration' => 30,
             'price' => 15.00,
         ]);
@@ -122,7 +131,7 @@ class BarbershopSeeder extends Seeder
             'barbershop_id' => $barbershop3->id,
             'name' => 'Tinte',
         ], [
-            'description' => 'Tinte de cabello completo',
+            'description' => 'Tinte',
             'duration' => 60,
             'price' => 35.00,
         ]);
