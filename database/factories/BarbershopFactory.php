@@ -21,7 +21,7 @@ class BarbershopFactory extends Factory
         return [
             'barber_id' => User::factory()->state(['role' => 'barber']),
             'name' => fake()->company(),
-            'Description' => fake()->paragraph(),
+            'Description' => fake()->text(50),
             'address' => fake()->address(),
             'phone' => fake()->phoneNumber(),
         ];

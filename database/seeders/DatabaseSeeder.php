@@ -20,7 +20,6 @@ class DatabaseSeeder extends Seeder
             BarbershopSeeder::class,
             ServicesSeeder::class,
             SchedulesSeeder::class,
-            AppointmentsSeeder::class,
         ]);
     }
 }

@@ -16,6 +16,7 @@ class Appointments extends Model
         'start_time',
         'end_time',
         'status',
+        'client_comment',
     ];
 
     protected $casts = [
@@ -40,6 +41,6 @@ class Appointments extends Model
 
     public function service()
     {
-        return $this->belongsTo(Services::class);
+        return $this->belongsTo(Services::class, 'service_id');
     }
 }

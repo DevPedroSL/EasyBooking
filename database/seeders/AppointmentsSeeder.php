@@ -15,6 +15,8 @@ class AppointmentsSeeder extends Seeder
      */
     public function run(): void
     {
-        Appointments::factory(10)->create();
+        if (Appointments::count() === 0) {
+            Appointments::factory(10)->create();
+        }
     }
 }

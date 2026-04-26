@@ -3,20 +3,20 @@
 @tailwind utilities;
 
 :root {
-    --eb-ink: #18211e;
-    --eb-forest: #203b31;
-    --eb-moss: #2f6b4f;
-    --eb-gold: #c59b3a;
-    --eb-paper: #eef4ef;
-    --eb-surface: #fbfaf4;
-    --eb-surface-strong: #f4efe2;
-    --eb-line: #d8dfd5;
+    --eb-ink: #241a38;
+    --eb-forest: #4e3979;
+    --eb-moss: #674a9d;
+    --eb-gold: #8f6ad8;
+    --eb-paper: #f4f0fb;
+    --eb-surface: #fcfaff;
+    --eb-surface-strong: #f1ebfb;
+    --eb-line: #ddd4ef;
 }
 
 body.eb-body {
     min-height: 100vh;
     background:
-        linear-gradient(180deg, rgba(32, 59, 49, 0.10), rgba(238, 244, 239, 0) 280px),
+        linear-gradient(180deg, rgba(103, 74, 157, 0.12), rgba(244, 240, 251, 0) 280px),
         var(--eb-paper);
     color: var(--eb-ink);
 }
@@ -46,18 +46,18 @@ body.eb-body {
 .brand-name span,
 .app-nav a:hover,
 .app-nav button:hover {
-    color: #f3cf73;
+    color: #d9c7ff;
 }
 
 .app-nav .nav-action {
     background: var(--eb-gold);
     color: var(--eb-ink);
     border-radius: 8px;
-    box-shadow: 0 8px 18px rgba(197, 155, 58, 0.24);
+    box-shadow: 0 8px 18px rgba(143, 106, 216, 0.28);
 }
 
 .app-nav .nav-action:hover {
-    background: #d9ad46;
+    background: #7d56cc;
     color: var(--eb-ink);
 }
 
@@ -75,7 +75,7 @@ body.eb-body {
 .user-dropdown a:hover,
 .user-dropdown button:hover {
     background: var(--eb-surface-strong);
-    color: var(--eb-forest);
+    color: var(--eb-moss);
 }
 
 .page-shell {
@@ -101,7 +101,7 @@ body.eb-body {
 }
 
 .page-subtitle {
-    color: #4f6259;
+    color: #6d5d8f;
     margin-top: 0.6rem;
 }
 
@@ -129,7 +129,7 @@ body.eb-body {
 
 .eb-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 20px 38px rgba(24, 33, 30, 0.14);
+    box-shadow: 0 20px 38px rgba(78, 57, 121, 0.16);
 }
 
 .eb-button {
@@ -157,16 +157,16 @@ body.eb-body {
 }
 
 .eb-button-gold:hover {
-    background: #d9ad46;
+    background: #7d56cc;
     color: var(--eb-ink);
 }
 
 .shop-hero {
-    background: var(--eb-forest);
+    background: linear-gradient(135deg, #4e3979, #6d4fb1);
     border-radius: 8px;
-    color: #edf7f1;
+    color: #f7f3ff;
     padding: 2rem;
-    box-shadow: 0 18px 38px rgba(24, 33, 30, 0.18);
+    box-shadow: 0 18px 38px rgba(78, 57, 121, 0.22);
 }
 
 .shop-hero h1,
@@ -180,14 +180,14 @@ body.eb-body {
 }
 
 .service-row {
-    border: 1px solid rgba(47, 107, 79, 0.14);
+    border: 1px solid rgba(103, 74, 157, 0.18);
     border-radius: 8px;
-    background: #f7f5ec;
+    background: #f7f2ff;
 }
 
 .service-row:hover {
-    background: #eef4ef;
-    border-color: rgba(47, 107, 79, 0.34);
+    background: #f1e9ff;
+    border-color: rgba(103, 74, 157, 0.34);
 }
 
 .slot-choice {
@@ -195,7 +195,7 @@ body.eb-body {
     width: 100%;
     border-radius: 8px;
     border: 1px solid var(--eb-line);
-    background: #f7f5ec;
+    background: #f7f2ff;
     color: var(--eb-ink);
     cursor: pointer;
     padding: 0.55rem 0.75rem;
@@ -213,7 +213,7 @@ body.eb-body .bg-white {
 }
 
 body.eb-body .bg-gray-50 {
-    background-color: #f2f6f2;
+    background-color: #f6f1ff;
 }
 
 body.eb-body .border-gray-100,

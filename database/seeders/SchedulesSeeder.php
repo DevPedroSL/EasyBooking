@@ -15,6 +15,6 @@ class SchedulesSeeder extends Seeder
      */
     public function run(): void
     {
-        Schedules::factory(5)->create();
+        // Schedules are created in BarbershopSeeder.
     }
 }

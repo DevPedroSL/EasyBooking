@@ -16,31 +16,34 @@ class BarbershopSeeder extends Seeder
     public function run(): void
     {
         // Get the specific barbers
-        $carlos = \App\Models\User::where('email', 'barber@example.com')->first();
+        $barber = \App\Models\User::where('email', 'barber@example.com')->first();
         $javier = \App\Models\User::where('email', 'javier@example.com')->first();
         $antonio = \App\Models\User::where('email', 'antonio@example.com')->first();
 
         // Create specific barbershops
-        $barbershop1 = \App\Models\Barbershop::create([
-            'barber_id' => $carlos->id,
+        $barbershop1 = \App\Models\Barbershop::updateOrCreate([
             'name' => 'Barbería El Corte Fino',
-            'Description' => 'Especialistas en cortes modernos y clásicos con atención personalizada.',
+        ], [
+            'barber_id' => $barber->id,
+            'Description' => 'Especialistas en cortes modernos y clásicos.',
             'address' => 'Calle 5, Madrid',
             'phone' => '612 345 678',
         ]);
 
         // Create services for this barbershop
-        \App\Models\Services::create([
+        \App\Models\Services::updateOrCreate([
             'barbershop_id' => $barbershop1->id,
             'name' => 'Corte',
+        ], [
             'description' => 'Corte de cabello profesional',
             'duration' => 30,
             'price' => 15.00,
         ]);
 
-        \App\Models\Services::create([
+        \App\Models\Services::updateOrCreate([
             'barbershop_id' => $barbershop1->id,
             'name' => 'Tinte',
+        ], [
             'description' => 'Tinte de cabello completo',
             'duration' => 60,
             'price' => 35.00,
@@ -48,34 +51,38 @@ class BarbershopSeeder extends Seeder
 
         // Create schedules for barbershop1 (Mon-Fri 9AM-9PM)
         for ($day = 1; $day <= 5; $day++) {
-            \App\Models\Schedules::create([
+            \App\Models\Schedules::updateOrCreate([
                 'barbershop_id' => $barbershop1->id,
                 'day_of_week' => $day,
+            ], [
                 'start_time' => '09:00',
                 'end_time' => '21:00',
             ]);
         }
 
-        $barbershop2 = \App\Models\Barbershop::create([
-            'barber_id' => $javier->id,
+        $barbershop2 = \App\Models\Barbershop::updateOrCreate([
             'name' => 'Urban Style Barber',
-            'Description' => 'Barbería urbana con estilo moderno, degradados y arreglos de barba profesionales.',
+        ], [
+            'barber_id' => $javier->id,
+            'Description' => 'Estilo urbano, degradados y barba profesional.',
             'address' => 'Calle 10, Barcelona',
             'phone' => '634 987 321',
         ]);
 
         // Create services for this barbershop
-        \App\Models\Services::create([
+        \App\Models\Services::updateOrCreate([
             'barbershop_id' => $barbershop2->id,
             'name' => 'Corte',
+        ], [
             'description' => 'Corte de cabello profesional',
             'duration' => 30,
             'price' => 15.00,
         ]);
 
-        \App\Models\Services::create([
+        \App\Models\Services::updateOrCreate([
             'barbershop_id' => $barbershop2->id,
             'name' => 'Tinte',
+        ], [
             'description' => 'Tinte de cabello completo',
             'duration' => 60,
             'price' => 35.00,
@@ -83,34 +90,38 @@ class BarbershopSeeder extends Seeder
 
         // Create schedules for barbershop2
         for ($day = 1; $day <= 5; $day++) {
-            \App\Models\Schedules::create([
+            \App\Models\Schedules::updateOrCreate([
                 'barbershop_id' => $barbershop2->id,
                 'day_of_week' => $day,
+            ], [
                 'start_time' => '09:00',
                 'end_time' => '21:00',
             ]);
         }
 
-        $barbershop3 = \App\Models\Barbershop::create([
-            'barber_id' => $antonio->id,
+        $barbershop3 = \App\Models\Barbershop::updateOrCreate([
             'name' => 'Old School Barbershop',
-            'Description' => 'Ambiente clásico con técnicas tradicionales de afeitado y corte.',
+        ], [
+            'barber_id' => $antonio->id,
+            'Description' => 'Ambiente clásico con afeitado y corte tradicional.',
             'address' => 'Calle 7, Jumilla, Murcia',
             'phone' => '655 112 233',
         ]);
 
         // Create services for this barbershop
-        \App\Models\Services::create([
+        \App\Models\Services::updateOrCreate([
             'barbershop_id' => $barbershop3->id,
             'name' => 'Corte',
+        ], [
             'description' => 'Corte de cabello profesional',
             'duration' => 30,
             'price' => 15.00,
         ]);
 
-        \App\Models\Services::create([
+        \App\Models\Services::updateOrCreate([
             'barbershop_id' => $barbershop3->id,
             'name' => 'Tinte',
+        ], [
             'description' => 'Tinte de cabello completo',
             'duration' => 60,
             'price' => 35.00,
@@ -118,9 +129,10 @@ class BarbershopSeeder extends Seeder
 
         // Create schedules for barbershop3
         for ($day = 1; $day <= 5; $day++) {
-            \App\Models\Schedules::create([
+            \App\Models\Schedules::updateOrCreate([
                 'barbershop_id' => $barbershop3->id,
                 'day_of_week' => $day,
+            ], [
                 'start_time' => '09:00',
                 'end_time' => '21:00',
             ]);

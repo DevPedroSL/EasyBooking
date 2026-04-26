@@ -21,7 +21,7 @@ class ServicesFactory extends Factory
         return [
             'barbershop_id' => Barbershop::inRandomOrder()->first()->id ?? Barbershop::factory()->create()->id,
             'name' => fake()->word(),
-            'description' => fake()->sentence(),
+            'description' => fake()->text(50),
             'duration' => fake()->numberBetween(15, 120),
             'price' => fake()->randomFloat(2, 10, 100),
         ];

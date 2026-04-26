@@ -33,6 +33,6 @@ class Services extends Model
 
     public function appointments()
     {
-        return $this->hasMany(Appointments::class);
+        return $this->hasMany(Appointments::class, 'service_id');
     }
 }

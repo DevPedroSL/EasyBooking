@@ -12,15 +12,16 @@
   </div>
 
   <div class="eb-panel overflow-hidden p-8">
-    <form action="{{ route('appointments.store', $barbershop) }}" method="POST">
-      @csrf
+    <form action="{{ route('appointments.confirm', $barbershop) }}" method="GET">
       <input type="hidden" name="service_id" value="{{ $service->id }}">
 
       <div class="mb-6">
         <h2 class="text-xl font-black text-gray-900 mb-4">Horarios Disponibles</h2>
-        @foreach($days as $day)
+        @error('datetime') <p class="mb-4 text-sm font-semibold text-red-600">{{ $message }}</p> @enderror
+
+        @forelse($days as $day)
           <div class="mb-4">
-            <h3 class="text-lg font-bold text-emerald-900 mb-2">{{ $day['date']->format('l, d M Y') }}</h3>
+            <h3 class="text-lg font-bold text-violet-900 mb-2">{{ $day['date']->format('l, d M Y') }}</h3>
             <div class="grid grid-cols-4 gap-2">
               @foreach($day['slots'] as $slot)
                 <label class="flex items-center">
@@ -32,25 +33,19 @@
               @endforeach
             </div>
           </div>
-        @endforeach
+        @empty
+          <p class="text-gray-600">No hay horarios disponibles para este servicio.</p>
+        @endforelse
       </div>
 
-      <div class="flex justify-end">
-        <button type="submit" class="eb-button px-6 py-3">
-          Reservar Cita
-        </button>
-      </div>
+      @if(!empty($days))
+        <div class="flex justify-end">
+          <button type="submit" class="eb-button px-6 py-3">
+            Continuar
+          </button>
+        </div>
+      @endif
     </form>
   </div>
 </div>
-
-<script>
-  // Ensure only one slot is selected per day
-  document.querySelectorAll('input[name="date"]').forEach(dateInput => {
-    dateInput.addEventListener('change', function() {
-      // Uncheck other start_time if different date
-      // But since date and start_time are separate, need to handle
-    });
-  });
-</script>
 @endsection

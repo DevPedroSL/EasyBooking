@@ -14,11 +14,13 @@ return new class extends Migration
         Schema::create('appointments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('client_id')->constrained('users')->cascadeOnDelete();
-            $table->foreignId('barbershop_id');
-            $table->foreignId('service_id');
+            $table->foreignId('barbershop_id')->constrained('barbershops')->cascadeOnDelete();
+            $table->foreignId('service_id')->constrained('services')->cascadeOnDelete();
+            $table->date('appointment_date')->nullable();
             $table->time('start_time');
             $table->time('end_time');
             $table->enum('status', ['pending', 'accepted', 'rejected', 'completed', 'cancelled'])->default('pending');
+            $table->text('client_comment')->nullable();
             $table->timestamps();
         });
     }

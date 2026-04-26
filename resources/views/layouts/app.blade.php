@@ -44,7 +44,7 @@
             <a href="{{ route('appointments.barber') }}" class="nav-action inline-block px-3 py-1 text-sm font-medium transition-colors">Gestionar Citas</a>
           @endif
           @if(auth()->user()->role === 'admin')
-            <a href="{{ route('admin.barbershops.index') }}" class="text-sm font-bold">Gestionar Barberías</a>
+            <a href="{{ route('admin.dashboard') }}" class="nav-action inline-block px-3 py-1 text-sm font-medium transition-colors">Panel Admin</a>
           @endif
         @endauth
       </div>
@@ -52,12 +52,15 @@
       @auth
         <div class="relative">
           <button id="user-menu-button" class="flex items-center gap-2 text-sm font-medium" onclick="toggleDropdown()">
-            <img class="h-8 w-8 rounded-full border border-yellow-200" src="https://ui-avatars.com/api/?name={{ auth()->user()->name }}" alt="Perfil">
+            <img class="h-8 w-8 rounded-full border border-violet-200" src="https://ui-avatars.com/api/?name={{ auth()->user()->name }}" alt="Perfil">
             <span>{{ auth()->user()->name }}</span>
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
           </button>
           <div id="user-dropdown" class="user-dropdown hidden absolute right-0 mt-2 w-48 shadow-lg z-50">
             <a href="{{ route('profile.edit') }}" class="block px-4 py-2 text-sm">Editar Perfil</a>
+            @if(auth()->user()->role === 'admin')
+              <a href="{{ route('admin.dashboard') }}" class="block px-4 py-2 text-sm">Panel Admin</a>
+            @endif
             <form method="POST" action="{{ route('logout') }}">
               @csrf
               <button type="submit" class="block w-full text-left px-4 py-2 text-sm">

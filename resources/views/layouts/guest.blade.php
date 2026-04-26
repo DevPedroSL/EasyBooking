@@ -23,7 +23,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.121 14.121L19 19m-7-7l7-7m-7 7l-2.879 2.879M12 12L9.121 9.121m0 5.758a3 3 0 11-4.243 4.243 3 3 0 014.243-4.243z"></path>
                         </svg>
                     </div>
-                    <span class="text-2xl font-black text-gray-900 tracking-tight">Easy<span class="text-amber-700">Booking</span></span>
+                    <span class="text-2xl font-black text-gray-900 tracking-tight">Easy<span class="text-violet-700">Booking</span></span>
                 </a>
             </div>
 
