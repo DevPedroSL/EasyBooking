@@ -13,7 +13,7 @@
   </div>
 
   <div class="eb-panel p-8">
-    <form action="{{ route('admin.barbershops.update', $barbershop) }}" method="POST">
+    <form action="{{ route('admin.barbershops.update', $barbershop) }}" method="POST" enctype="multipart/form-data">
       @csrf
       @method('PATCH')
 
@@ -46,6 +46,37 @@
         <label for="phone" class="block text-sm font-bold text-gray-900 mb-2">Teléfono</label>
         <input type="text" id="phone" name="phone" value="{{ old('phone', $barbershop->phone) }}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-600 focus:border-transparent" required>
         @error('phone')
+          <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+        @enderror
+      </div>
+
+      <div class="mb-6">
+        <label for="visibility" class="block text-sm font-bold text-gray-900 mb-2">Visibilidad</label>
+        <select id="visibility" name="visibility" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-600 focus:border-transparent" required>
+          <option value="public" @selected(old('visibility', $barbershop->visibility) === 'public')>Pública</option>
+          <option value="private" @selected(old('visibility', $barbershop->visibility) === 'private')>Privada</option>
+        </select>
+        @error('visibility')
+          <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+        @enderror
+      </div>
+
+      <div class="mb-6">
+        <label for="image" class="block text-sm font-bold text-gray-900 mb-2">Imagen de la barbería</label>
+        @if($barbershop->image_url)
+          <div class="mb-3 flex h-40 w-full items-center justify-center rounded-2xl bg-white p-4 shadow-sm">
+            <img src="{{ $barbershop->image_url }}" alt="{{ $barbershop->name }}" class="h-full w-full object-contain">
+          </div>
+          <label class="mb-3 inline-flex items-center gap-2 text-sm font-medium text-red-700">
+            <input type="checkbox" name="remove_image" value="1" class="rounded border-gray-300 text-red-600 shadow-sm focus:ring-red-500">
+            Quitar imagen actual
+          </label>
+        @endif
+        <input type="file" id="image" name="image" accept="image/*" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-600 focus:border-transparent">
+        @error('image')
+          <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+        @enderror
+        @error('remove_image')
           <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
         @enderror
       </div>

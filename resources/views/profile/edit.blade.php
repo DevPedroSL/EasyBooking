@@ -15,11 +15,31 @@
             <div class="mb-6">
                 <h2 class="mt-2 text-2xl font-black text-gray-900">Información de la cuenta</h2>            </div>
 
-            <form method="POST" action="{{ route('profile.update') }}" class="space-y-5">
+            <form method="POST" action="{{ route('profile.update') }}" enctype="multipart/form-data" class="space-y-5">
                 @csrf
                 @method('PATCH')
 
                 <div class="grid gap-5 md:grid-cols-2">
+                    <div class="md:col-span-2">
+                        <label for="avatar" class="block text-sm font-bold text-gray-900 mb-2">Imagen de perfil</label>
+                        <div class="flex items-center gap-4">
+                            <img src="{{ $user->avatar_url }}" alt="{{ $user->name }}" class="h-20 w-20 rounded-2xl border border-violet-200 object-cover shadow-sm">
+                            <div class="flex-1">
+                                <input
+                                    id="avatar"
+                                    name="avatar"
+                                    type="file"
+                                    accept="image/*"
+                                    class="w-full rounded-lg border border-gray-300 px-4 py-3 shadow-sm focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-200"
+                                >
+                                <p class="mt-2 text-xs text-gray-500">Sube una imagen JPG, PNG o WebP de hasta 2 MB.</p>
+                            </div>
+                        </div>
+                        @error('avatar')
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
                     <div class="md:col-span-2">
                         <label for="name" class="block text-sm font-bold text-gray-900 mb-2">Nombre</label>
                         <input
@@ -124,6 +144,9 @@
 
         <section class="eb-panel p-8">
             <h2 class="mt-2 text-2xl font-black text-gray-900">{{ $user->name }}</h2>
+            <div class="mt-4">
+                <img src="{{ $user->avatar_url }}" alt="{{ $user->name }}" class="h-28 w-28 rounded-3xl border border-violet-200 object-cover shadow-sm">
+            </div>
             <div class="mt-6 grid gap-4 md:grid-cols-2 text-sm text-gray-700">
                 <div>
                     <p class="font-bold text-gray-500">Rol</p>
@@ -147,7 +170,14 @@
         <section class="eb-panel border border-red-200 p-8">
             <h2 class="mt-2 text-2xl font-black text-gray-900">Eliminar cuenta</h2>
 
-            <form method="POST" action="{{ route('profile.destroy') }}" class="mt-6 space-y-4">
+            <form
+                method="POST"
+                action="{{ route('profile.destroy') }}"
+                class="mt-6 space-y-4"
+                data-confirm-title="Eliminar cuenta"
+                data-confirm-message="Vas a eliminar tu cuenta y todos sus datos asociados. Esta accion no se puede deshacer."
+                data-confirm-button="Eliminar cuenta"
+            >
                 @csrf
                 @method('DELETE')
 

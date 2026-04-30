@@ -28,6 +28,7 @@ class BarbershopSeeder extends Seeder
             'Description' => 'Cortes buenos',
             'address' => 'Calle 5, Madrid',
             'phone' => '612 345 678',
+            'visibility' => 'public',
         ]);
 
         // Create services for this barbershop
@@ -38,6 +39,7 @@ class BarbershopSeeder extends Seeder
             'description' => 'Corte de pelo',
             'duration' => 30,
             'price' => 15.00,
+            'visibility' => 'public',
         ]);
 
         \App\Models\Services::updateOrCreate([
@@ -47,6 +49,7 @@ class BarbershopSeeder extends Seeder
             'description' => 'Rulos permantentes',
             'duration' => 60,
             'price' => 25.00,
+            'visibility' => 'public',
         ]);
 
         \App\Models\Services::updateOrCreate([
@@ -56,6 +59,7 @@ class BarbershopSeeder extends Seeder
             'description' => 'Tinte',
             'duration' => 60,
             'price' => 35.00,
+            'visibility' => 'public',
         ]);
 
         // Create schedules for barbershop1 (Mon-Fri 9AM-9PM)
@@ -76,6 +80,7 @@ class BarbershopSeeder extends Seeder
             'Description' => 'Cortes muy buenos',
             'address' => 'Calle 10, Barcelona',
             'phone' => '634 987 321',
+            'visibility' => 'public',
         ]);
 
         // Create services for this barbershop
@@ -86,6 +91,7 @@ class BarbershopSeeder extends Seeder
             'description' => 'Corte de pelo',
             'duration' => 30,
             'price' => 15.00,
+            'visibility' => 'public',
         ]);
 
         \App\Models\Services::updateOrCreate([
@@ -95,6 +101,7 @@ class BarbershopSeeder extends Seeder
             'description' => 'Tinte',
             'duration' => 60,
             'price' => 35.00,
+            'visibility' => 'public',
         ]);
 
         // Create schedules for barbershop2
@@ -115,6 +122,7 @@ class BarbershopSeeder extends Seeder
             'Description' => 'Cortes de calidad',
             'address' => 'Calle 7, Jumilla, Murcia',
             'phone' => '655 112 233',
+            'visibility' => 'public',
         ]);
 
         // Create services for this barbershop
@@ -125,6 +133,7 @@ class BarbershopSeeder extends Seeder
             'description' => 'Corte de pelo',
             'duration' => 30,
             'price' => 15.00,
+            'visibility' => 'public',
         ]);
 
         \App\Models\Services::updateOrCreate([
@@ -134,6 +143,7 @@ class BarbershopSeeder extends Seeder
             'description' => 'Tinte',
             'duration' => 60,
             'price' => 35.00,
+            'visibility' => 'public',
         ]);
 
         // Create schedules for barbershop3

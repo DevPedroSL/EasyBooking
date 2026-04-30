@@ -25,6 +25,7 @@
           <th class="px-4 py-3 text-left text-sm font-bold text-gray-900 hidden sm:table-cell">Descripción</th>
           <th class="px-4 py-3 text-left text-sm font-bold text-gray-900 hidden md:table-cell">Dirección</th>
           <th class="px-4 py-3 text-left text-sm font-bold text-gray-900 hidden lg:table-cell">Teléfono</th>
+          <th class="px-4 py-3 text-left text-sm font-bold text-gray-900">Visibilidad</th>
           <th class="px-4 py-3 text-left text-sm font-bold text-gray-900">Acciones</th>
         </tr>
       </thead>
@@ -36,11 +37,23 @@
             <td class="px-4 py-4 text-sm text-gray-600 hidden sm:table-cell">{{ Str::limit($barbershop->Description, 50) }}</td>
             <td class="px-4 py-4 text-sm text-gray-600 hidden md:table-cell">{{ Str::limit($barbershop->address, 40) }}</td>
             <td class="px-4 py-4 text-sm text-gray-600 hidden lg:table-cell">{{ $barbershop->phone }}</td>
+            <td class="px-4 py-4 text-sm">
+              <span class="inline-flex rounded-full px-3 py-1 text-xs font-bold {{ $barbershop->visibility === 'public' ? 'bg-green-100 text-green-800' : 'bg-slate-200 text-slate-700' }}">
+                {{ $barbershop->visibility === 'public' ? 'Pública' : 'Privada' }}
+              </span>
+            </td>
             <td class="px-4 py-4 text-sm flex flex-col sm:flex-row gap-2">
               <a href="{{ route('admin.barbershops.edit', $barbershop) }}" class="inline-flex justify-center items-center bg-violet-700 text-white px-3 py-2 rounded-lg hover:bg-violet-800 transition text-xs font-bold whitespace-nowrap">
                 Editar
               </a>
-              <form action="{{ route('admin.barbershops.destroy', $barbershop) }}" method="POST" class="inline-block w-full sm:w-auto" onsubmit="return confirm('¿Estás seguro de que quieres eliminar esta barbería?');">
+              <form
+                action="{{ route('admin.barbershops.destroy', $barbershop) }}"
+                method="POST"
+                class="inline-block w-full sm:w-auto"
+                data-confirm-title="Eliminar barberia"
+                data-confirm-message="Vas a eliminar esta barberia. Esta accion no se puede deshacer."
+                data-confirm-button="Eliminar barberia"
+              >
                 @csrf
                 @method('DELETE')
                 <button type="submit" class="w-full sm:w-auto bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 transition text-xs font-bold">
@@ -51,7 +64,7 @@
           </tr>
         @empty
           <tr>
-            <td colspan="6" class="px-6 py-8 text-center text-gray-600">
+            <td colspan="7" class="px-6 py-8 text-center text-gray-600">
               No hay barberías creadas aún.
             </td>
           </tr>

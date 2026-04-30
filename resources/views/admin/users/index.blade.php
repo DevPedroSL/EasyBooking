@@ -49,7 +49,13 @@
                                 <a href="{{ route('admin.users.edit', $user) }}" class="inline-flex items-center justify-center rounded-lg bg-violet-700 px-3 py-2 text-xs font-bold text-white transition hover:bg-violet-800">
                                     Editar
                                 </a>
-                                <form action="{{ route('admin.users.destroy', $user) }}" method="POST" onsubmit="return confirm('¿Seguro que quieres eliminar este usuario?');">
+                                <form
+                                    action="{{ route('admin.users.destroy', $user) }}"
+                                    method="POST"
+                                    data-confirm-title="Eliminar usuario"
+                                    data-confirm-message="Vas a eliminar este usuario. Esta accion no se puede deshacer."
+                                    data-confirm-button="Eliminar usuario"
+                                >
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="w-full rounded-lg bg-red-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-red-700">

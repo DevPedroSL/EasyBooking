@@ -57,7 +57,13 @@
 
         <div class="mt-8 flex flex-wrap justify-end gap-3">
             @if($appointment->client_id === auth()->id() && $appointment->status === 'pending')
-                <form method="POST" action="{{ route('appointments.cancel', $appointment) }}">
+                <form
+                    method="POST"
+                    action="{{ route('appointments.cancel', $appointment) }}"
+                    data-confirm-title="Cancelar cita"
+                    data-confirm-message="Vas a cancelar esta cita. Si quieres reservarla de nuevo, tendras que hacerlo otra vez."
+                    data-confirm-button="Cancelar cita"
+                >
                     @csrf
                     @method('PATCH')
                     <button type="submit" class="inline-flex min-h-10 items-center justify-center rounded-lg bg-red-600 px-5 py-3 font-bold text-white transition hover:bg-red-700">

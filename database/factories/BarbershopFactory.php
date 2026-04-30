@@ -24,6 +24,7 @@ class BarbershopFactory extends Factory
             'Description' => fake()->text(50),
             'address' => fake()->address(),
             'phone' => fake()->phoneNumber(),
+            'visibility' => 'public',
         ];
     }
 }

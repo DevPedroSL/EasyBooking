@@ -4,156 +4,109 @@
 
 @section('content')
 <div class="page-shell max-w-4xl">
-<div class="eb-panel p-6">
-    <h1 class="text-3xl font-black text-gray-900 mb-6">Editar Mi Barbería</h1>
+    <div class="eb-panel p-6">
+        <div class="mb-8 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div>
+                <h1 class="text-3xl font-black text-gray-900">Editar Mi Barbería</h1>
+                <p class="mt-2 text-sm text-gray-600">Aquí puedes actualizar la información general de tu barbería.</p>
+            </div>
 
-    @if(session('success'))
-        <div class="mb-4 p-4 bg-green-100 border border-green-300 text-green-800 rounded">
-            {{ session('success') }}
+            <div class="rounded-2xl border border-violet-200 bg-violet-50 p-4 md:max-w-sm">
+                <p class="text-sm font-bold text-violet-900">Servicios</p>
+                <p class="mt-2 text-sm text-violet-800">Gestiona tus servicios en una pantalla aparte para tener todo más ordenado.</p>
+                <a href="{{ route('barbershops.services.index') }}" class="mt-4 inline-flex min-h-10 items-center justify-center rounded-lg bg-violet-700 px-4 py-2 text-sm font-bold text-white transition hover:bg-violet-800">
+                    Editar servicios
+                </a>
+            </div>
         </div>
-    @endif
 
-    @if(session('error'))
-        <div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-            {{ session('error') }}
-        </div>
-    @endif
+        @if(session('success'))
+            <div class="mb-4 rounded border border-green-300 bg-green-100 p-4 text-green-800">
+                {{ session('success') }}
+            </div>
+        @endif
 
-    @if ($errors->any())
-        <div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-            <ul>
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
+        @if(session('error'))
+            <div class="mb-4 rounded border border-red-400 bg-red-100 p-4 text-red-700">
+                {{ session('error') }}
+            </div>
+        @endif
 
-    <form action="{{ route('barbershops.updateMy') }}" method="POST">
-        @csrf
-        @method('PATCH')
+        @if ($errors->any())
+            <div class="mb-4 rounded border border-red-400 bg-red-100 p-4 text-red-700">
+                <ul class="list-disc ps-5">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
 
-        <fieldset class="mb-8 pb-8 border-b">
-            <legend class="text-xl font-semibold text-gray-800 mb-4">Información de la Barbería</legend>
+        <form action="{{ route('barbershops.updateMy') }}" method="POST" enctype="multipart/form-data">
+            @csrf
+            @method('PATCH')
 
             <div class="mb-4">
                 <label for="name" class="block text-sm font-medium text-gray-700">Nombre de la Barbería</label>
-                <input type="text" name="name" id="name" value="{{ old('name', $barbershop->name) }}" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm px-3 py-2 focus:ring-violet-500 focus:border-violet-500" required>
-                @error('name') <p class="text-red-500 text-sm">{{ $message }}</p> @enderror
+                <input type="text" name="name" id="name" value="{{ old('name', $barbershop->name) }}" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-violet-500 focus:ring-violet-500" required>
+                @error('name') <p class="text-sm text-red-500">{{ $message }}</p> @enderror
             </div>
 
             <div class="mb-4">
                 <label for="Description" class="block text-sm font-medium text-gray-700">Descripción</label>
-                <textarea name="Description" id="Description" rows="4" maxlength="50" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm px-3 py-2 focus:ring-violet-500 focus:border-violet-500" required>{{ old('Description', $barbershop->Description) }}</textarea>
+                <textarea name="Description" id="Description" rows="4" maxlength="50" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-violet-500 focus:ring-violet-500" required>{{ old('Description', $barbershop->Description) }}</textarea>
                 <p class="mt-1 text-xs text-gray-500">Máximo 50 caracteres.</p>
-                @error('Description') <p class="text-red-500 text-sm">{{ $message }}</p> @enderror
+                @error('Description') <p class="text-sm text-red-500">{{ $message }}</p> @enderror
             </div>
 
             <div class="mb-4">
                 <label for="address" class="block text-sm font-medium text-gray-700">Dirección</label>
-                <input type="text" name="address" id="address" value="{{ old('address', $barbershop->address) }}" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm px-3 py-2 focus:ring-violet-500 focus:border-violet-500" required>
-                @error('address') <p class="text-red-500 text-sm">{{ $message }}</p> @enderror
+                <input type="text" name="address" id="address" value="{{ old('address', $barbershop->address) }}" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-violet-500 focus:ring-violet-500" required>
+                @error('address') <p class="text-sm text-red-500">{{ $message }}</p> @enderror
             </div>
 
             <div class="mb-4">
                 <label for="phone" class="block text-sm font-medium text-gray-700">Teléfono</label>
-                <input type="text" name="phone" id="phone" value="{{ old('phone', $barbershop->phone) }}" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm px-3 py-2 focus:ring-violet-500 focus:border-violet-500" required>
-                @error('phone') <p class="text-red-500 text-sm">{{ $message }}</p> @enderror
+                <input type="text" name="phone" id="phone" value="{{ old('phone', $barbershop->phone) }}" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-violet-500 focus:ring-violet-500" required>
+                @error('phone') <p class="text-sm text-red-500">{{ $message }}</p> @enderror
             </div>
-        </fieldset>
 
-        <fieldset class="mb-8">
-            <legend class="text-xl font-semibold text-gray-800 mb-4">Servicios</legend>
-
-            @forelse ($services as $service)
-                <div class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                    <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <h3 class="font-semibold text-gray-700">Servicio {{ $loop->iteration }}</h3>
-                        <button
-                            type="submit"
-                            form="delete-service-{{ $service->id }}"
-                            class="inline-flex items-center justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-bold text-white transition hover:bg-red-700"
-                            onclick="return confirm('¿Seguro que quieres eliminar este servicio?');"
-                        >
-                            Eliminar servicio
-                        </button>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="services_{{ $service->id }}_name" class="block text-sm font-medium text-gray-700">Nombre del Servicio</label>
-                        <input type="text" name="services[{{ $service->id }}][name]" id="services_{{ $service->id }}_name" value="{{ old("services.{$service->id}.name", $service->name) }}" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm px-3 py-2 focus:ring-violet-500 focus:border-violet-500" required>
-                        @error("services.{$service->id}.name") <p class="text-red-500 text-sm">{{ $message }}</p> @enderror
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="services_{{ $service->id }}_description" class="block text-sm font-medium text-gray-700">Descripción</label>
-                        <textarea name="services[{{ $service->id }}][description]" id="services_{{ $service->id }}_description" rows="2" maxlength="50" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm px-3 py-2 focus:ring-violet-500 focus:border-violet-500">{{ old("services.{$service->id}.description", $service->description) }}</textarea>
-                        <p class="mt-1 text-xs text-gray-500">Máximo 50 caracteres.</p>
-                        @error("services.{$service->id}.description") <p class="text-red-500 text-sm">{{ $message }}</p> @enderror
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label for="services_{{ $service->id }}_duration" class="block text-sm font-medium text-gray-700">Duración (minutos)</label>
-                            <input type="number" name="services[{{ $service->id }}][duration]" id="services_{{ $service->id }}_duration" value="{{ old("services.{$service->id}.duration", $service->duration) }}" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm px-3 py-2 focus:ring-violet-500 focus:border-violet-500" min="1" required>
-                            @error("services.{$service->id}.duration") <p class="text-red-500 text-sm">{{ $message }}</p> @enderror
-                        </div>
-
-                        <div>
-                            <label for="services_{{ $service->id }}_price" class="block text-sm font-medium text-gray-700">Precio (€)</label>
-                            <input type="number" name="services[{{ $service->id }}][price]" id="services_{{ $service->id }}_price" value="{{ old("services.{$service->id}.price", $service->price) }}" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm px-3 py-2 focus:ring-violet-500 focus:border-violet-500" min="0" step="0.01" required>
-                            @error("services.{$service->id}.price") <p class="text-red-500 text-sm">{{ $message }}</p> @enderror
-                        </div>
-                    </div>
-                </div>
-            @empty
-                <p class="text-gray-600 italic mb-4">No tienes servicios registrados aún.</p>
-            @endforelse
-
-            <div class="mb-6 p-4 bg-violet-50 rounded-lg border border-violet-200">
-                <h3 class="font-semibold text-violet-700 mb-4">Agregar Nuevo Servicio</h3>
-                
-                <div class="mb-3">
-                    <label for="new_service_name" class="block text-sm font-medium text-gray-700">Nombre del Servicio</label>
-                    <input type="text" name="new_services[0][name]" id="new_service_name" value="{{ old('new_services.0.name') }}" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm px-3 py-2 focus:ring-violet-500 focus:border-violet-500" placeholder="Ej: Corte de cabello" required>
-                    @error("new_services.0.name") <p class="text-red-500 text-sm">{{ $message }}</p> @enderror
-                </div>
-
-                <div class="mb-3">
-                    <label for="new_service_description" class="block text-sm font-medium text-gray-700">Descripción</label>
-                    <textarea name="new_services[0][description]" id="new_service_description" rows="2" maxlength="50" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm px-3 py-2 focus:ring-violet-500 focus:border-violet-500" placeholder="Describe el servicio...">{{ old('new_services.0.description') }}</textarea>
-                    <p class="mt-1 text-xs text-gray-500">Máximo 50 caracteres.</p>
-                    @error("new_services.0.description") <p class="text-red-500 text-sm">{{ $message }}</p> @enderror
-                </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label for="new_service_duration" class="block text-sm font-medium text-gray-700">Duración (minutos)</label>
-                        <input type="number" name="new_services[0][duration]" id="new_service_duration" value="{{ old('new_services.0.duration') }}" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm px-3 py-2 focus:ring-violet-500 focus:border-violet-500" min="1" placeholder="30" required>
-                        @error("new_services.0.duration") <p class="text-red-500 text-sm">{{ $message }}</p> @enderror
-                    </div>
-
-                    <div>
-                        <label for="new_service_price" class="block text-sm font-medium text-gray-700">Precio (€)</label>
-                        <input type="number" name="new_services[0][price]" id="new_service_price" value="{{ old('new_services.0.price') }}" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm px-3 py-2 focus:ring-violet-500 focus:border-violet-500" min="0" step="0.01" placeholder="15.00" required>
-                        @error("new_services.0.price") <p class="text-red-500 text-sm">{{ $message }}</p> @enderror
-                    </div>
-                </div>
+            <div class="mb-4">
+                <label for="visibility" class="block text-sm font-medium text-gray-700">Visibilidad</label>
+                <select name="visibility" id="visibility" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-violet-500 focus:ring-violet-500" required>
+                    <option value="public" @selected(old('visibility', $barbershop->visibility) === 'public')>Pública</option>
+                    <option value="private" @selected(old('visibility', $barbershop->visibility) === 'private')>Privada</option>
+                </select>
+                <p class="mt-1 text-xs text-gray-500">Las barberías públicas aparecen en Explorar. Las privadas solo las ve su barbero y el admin.</p>
+                @error('visibility') <p class="text-sm text-red-500">{{ $message }}</p> @enderror
             </div>
-        </fieldset>
 
-        <div class="flex justify-end gap-2">
-            <a href="{{ route('barbershops.editMy') }}" class="bg-gray-400 text-white px-4 py-2 rounded-md hover:bg-gray-500">Cancelar</a>
-            <button type="submit" class="bg-violet-700 text-white px-4 py-2 rounded-md hover:bg-violet-800">Actualizar Barbería y Servicios</button>
-        </div>
-    </form>
+            <div class="mb-6">
+                <label for="image" class="block text-sm font-medium text-gray-700">Imagen de la barbería</label>
+                @if($barbershop->image_url)
+                    <div class="mb-3 flex h-40 w-full items-center justify-center rounded-2xl bg-white p-4 shadow-sm">
+                        <img src="{{ $barbershop->image_url }}" alt="{{ $barbershop->name }}" class="h-full w-full object-contain">
+                    </div>
+                    <label class="mb-3 inline-flex items-center gap-2 text-sm font-medium text-red-700">
+                        <input type="checkbox" name="remove_image" value="1" class="rounded border-gray-300 text-red-600 shadow-sm focus:ring-red-500">
+                        Quitar imagen actual
+                    </label>
+                @endif
+                <input type="file" name="image" id="image" accept="image/*" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-violet-500 focus:ring-violet-500">
+                <p class="mt-1 text-xs text-gray-500">Sube una nueva imagen para reemplazar la actual.</p>
+                @error('image') <p class="text-sm text-red-500">{{ $message }}</p> @enderror
+                @error('remove_image') <p class="text-sm text-red-500">{{ $message }}</p> @enderror
+            </div>
 
-    @foreach ($services as $service)
-        <form id="delete-service-{{ $service->id }}" action="{{ route('barbershops.services.destroy', $service) }}" method="POST">
-            @csrf
-            @method('DELETE')
+            <div class="flex flex-col gap-3 sm:flex-row sm:justify-end">
+                <a href="{{ route('barbershops.services.index') }}" class="inline-flex min-h-10 items-center justify-center rounded-lg bg-gray-200 px-4 py-2 text-sm font-bold text-gray-800 transition hover:bg-gray-300">
+                    Ir a servicios
+                </a>
+                <button type="submit" class="inline-flex min-h-10 items-center justify-center rounded-lg bg-violet-700 px-4 py-2 text-sm font-bold text-white transition hover:bg-violet-800">
+                    Guardar cambios
+                </button>
+            </div>
         </form>
-    @endforeach
-</div>
+    </div>
 </div>
 @endsection

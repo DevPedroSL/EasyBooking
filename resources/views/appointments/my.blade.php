@@ -47,7 +47,14 @@
             </span>
             <a href="{{ route('appointments.show', $appointment) }}" class="mt-3 block text-sm font-bold text-violet-700 hover:text-violet-900">Ver detalles</a>
             @if($appointment->status === 'pending')
-              <form method="POST" action="{{ route('appointments.cancel', $appointment) }}" class="mt-3">
+              <form
+                method="POST"
+                action="{{ route('appointments.cancel', $appointment) }}"
+                class="mt-3"
+                data-confirm-title="Cancelar cita"
+                data-confirm-message="Vas a cancelar esta cita. Si quieres reservarla de nuevo, tendras que hacerlo otra vez."
+                data-confirm-button="Cancelar cita"
+              >
                 @csrf
                 @method('PATCH')
                 <button type="submit" class="w-full rounded-lg bg-red-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-red-700">

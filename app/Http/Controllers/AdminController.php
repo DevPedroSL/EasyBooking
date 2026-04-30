@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Barbershop;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class AdminController extends Controller
 {
@@ -50,9 +51,29 @@ class AdminController extends Controller
             'Description' => 'required|string|max:150',
             'address' => 'required|string|max:255',
             'phone' => 'required|string|max:20',
+            'visibility' => 'required|in:public,private',
+            'image' => 'nullable|image|max:3072',
+            'remove_image' => 'nullable|boolean',
         ]);
 
-        $barbershop->update($validated);
+        $barbershop->update(collect($validated)->except(['image', 'remove_image'])->all());
+
+        if ($request->boolean('remove_image') && $barbershop->image_path) {
+            Storage::disk('public')->delete($barbershop->image_path);
+            $barbershop->update([
+                'image_path' => null,
+            ]);
+        }
+
+        if ($request->hasFile('image')) {
+            if ($barbershop->image_path) {
+                Storage::disk('public')->delete($barbershop->image_path);
+            }
+
+            $barbershop->update([
+                'image_path' => $request->file('image')->store('barbershops', 'public'),
+            ]);
+        }
 
         return redirect()->route('admin.barbershops.index')->with('success', 'Barbería actualizada correctamente.');
     }
@@ -60,6 +81,10 @@ class AdminController extends Controller
     public function barbershopsDestroy(Barbershop $barbershop)
     {
         $this->ensureAdmin();
+
+        if ($barbershop->image_path) {
+            Storage::disk('public')->delete($barbershop->image_path);
+        }
 
         $barbershop->delete();
 

@@ -13,6 +13,7 @@
 
   <div class="eb-panel overflow-hidden p-8">
     <form action="{{ route('appointments.confirm', $barbershop) }}" method="GET">
+      <input type="hidden" name="barbershop_id" value="{{ $barbershop->id }}">
       <input type="hidden" name="service_id" value="{{ $service->id }}">
 
       <div class="mb-6">
@@ -39,11 +40,29 @@
       </div>
 
       @if(!empty($days))
-        <div class="flex justify-end">
-          <button type="submit" class="eb-button px-6 py-3">
-            Continuar
-          </button>
-        </div>
+        @auth
+          <div class="flex justify-end">
+            <button type="submit" class="eb-button px-6 py-3">
+              Continuar
+            </button>
+          </div>
+        @else
+          <div class="rounded-2xl border border-amber-200 bg-amber-50 p-5">
+            <p class="text-sm font-black uppercase tracking-wide text-amber-800">Aviso</p>
+            <p class="mt-2 text-sm font-medium text-amber-900">
+              Para reservar una cita, selecciona una hora y después inicia sesión o regístrate. Guardaremos tu selección para que puedas confirmarla justo después.
+            </p>
+
+            <div class="mt-4 flex flex-col gap-3 sm:flex-row">
+              <button type="submit" formaction="{{ route('login') }}" class="eb-button px-6 py-3 text-center">
+                Iniciar sesión
+              </button>
+              <button type="submit" formaction="{{ route('register') }}" class="rounded-xl border border-amber-300 px-6 py-3 text-center text-sm font-bold text-amber-900 transition hover:bg-amber-100">
+                Registrarse
+              </button>
+            </div>
+          </div>
+        @endauth
       @endif
     </form>
   </div>

@@ -3,14 +3,40 @@
 @section('title', $barbershop->name . ' - EasyBooking')
 
 @section('content')
+@php
+  $visibleServices = $barbershop->services->filter(fn ($service) => $service->isVisibleTo(auth()->user()));
+@endphp
 
 
 <div class="page-shell max-w-4xl">
   <div class="shop-hero mb-8">
-    <div>
-      <h1 class="text-4xl font-black">{{ $barbershop->name }}</h1>
-      <p class="mt-3 max-w-2xl text-violet-50">{{ \Illuminate\Support\Str::limit($barbershop->Description, 50) }}</p>
-      <p class="mt-2 text-sm font-semibold text-violet-200">{{ $barbershop->address }}</p>
+    <div class="grid gap-6 md:grid-cols-[1.2fr_0.8fr] md:items-center">
+      <div>
+        <h1 class="text-4xl font-black">{{ $barbershop->name }}</h1>
+        <p class="mt-3 max-w-2xl text-violet-50">{{ \Illuminate\Support\Str::limit($barbershop->Description, 50) }}</p>
+        <p class="mt-2 text-sm font-semibold text-violet-200">{{ $barbershop->address }}</p>
+
+        @if($barbershop->barber)
+          <div class="mt-6 inline-flex items-center gap-3 rounded-2xl bg-white/10 px-4 py-3 backdrop-blur-sm">
+            <img src="{{ $barbershop->barber->avatar_url }}" alt="{{ $barbershop->barber->name }}" class="shop-avatar h-14 w-14 rounded-2xl object-cover">
+            <div>
+              <p class="text-lg font-bold">{{ $barbershop->barber->name }}</p>
+            </div>
+          </div>
+        @endif
+      </div>
+
+      <div>
+        @if($barbershop->image_url)
+          <div class="shop-hero-media flex h-72 w-full items-center justify-center rounded-3xl" aria-label="{{ $barbershop->name }}">
+            <img src="{{ $barbershop->image_url }}" alt="{{ $barbershop->name }}" class="h-full w-full object-contain">
+          </div>
+        @else
+          <div class="flex h-72 w-full items-center justify-center rounded-3xl bg-white/10 p-6 text-center shadow-2xl">
+            <span class="text-2xl font-black text-violet-50">{{ $barbershop->name }}</span>
+          </div>
+        @endif
+      </div>
     </div>
   </div>
 
@@ -19,7 +45,7 @@
       <h2 class="text-2xl font-black text-gray-900 mb-6">Nuestros Servicios</h2>
       
       <div class="space-y-4">
-        @foreach($barbershop->services as $service)
+        @forelse($visibleServices as $service)
           <div class="service-row flex items-center justify-between p-4 transition-colors group">
             <div class="flex-1">
               <h4 class="text-lg font-bold text-gray-800">{{ $service->name }}</h4>
@@ -33,7 +59,9 @@
               </a>
             </div>
           </div>
-        @endforeach
+        @empty
+          <p class="text-gray-600">No hay servicios visibles disponibles en este momento.</p>
+        @endforelse
       </div>
     </div>
   </div>

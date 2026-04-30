@@ -24,6 +24,7 @@ class ServicesFactory extends Factory
             'description' => fake()->text(50),
             'duration' => fake()->numberBetween(15, 120),
             'price' => fake()->randomFloat(2, 10, 100),
+            'visibility' => 'public',
         ];
     }
 }
