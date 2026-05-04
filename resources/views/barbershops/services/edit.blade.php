@@ -11,7 +11,7 @@
             <p class="mt-2 text-sm text-gray-600">Actualiza la información de {{ $service->name }}.</p>
         </div>
 
-        <form action="{{ route('barbershops.services.update', $service) }}" method="POST">
+        <form action="{{ route('barbershops.services.update', $service) }}" method="POST" enctype="multipart/form-data">
             @method('PATCH')
             @include('barbershops.services._form', ['submitLabel' => 'Guardar servicio'])
         </form>

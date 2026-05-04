@@ -11,7 +11,7 @@
             <p class="mt-2 text-sm text-gray-600">Añade un servicio nuevo para {{ $barbershop->name }}.</p>
         </div>
 
-        <form action="{{ route('barbershops.services.store') }}" method="POST">
+        <form action="{{ route('barbershops.services.store') }}" method="POST" enctype="multipart/form-data">
             @include('barbershops.services._form', ['submitLabel' => 'Crear servicio'])
         </form>
     </div>

@@ -17,7 +17,7 @@ class AppointmentController extends Controller
     ) {
     }
 
-    public function create(Barbershop $barbershop, Services $service)
+    public function create(Request $request, Barbershop $barbershop, Services $service)
     {
         abort_unless($barbershop->isVisibleTo(auth()->user()), 404);
 
@@ -28,23 +28,99 @@ class AppointmentController extends Controller
 
         abort_unless($service->isVisibleTo(auth()->user()), 404);
 
+        $today = Carbon::today();
         $days = [];
-        $tomorrow = Carbon::tomorrow();
-        $schedule = $barbershop->schedules
-            ->where('day_of_week', $tomorrow->dayOfWeekIso)
-            ->first();
+        $calendarMonths = [];
+        $preselectedDatetime = $request->old('datetime');
+        $preselectedDate = null;
+        $weekdayLabels = ['Lun.', 'Mar.', 'Mie.', 'Jue.', 'Vie.', 'Sab.', 'Dom.'];
+        $firstMonthStart = $today->copy()->startOfMonth();
+        $lastMonthStart = $today->copy()->addMonthNoOverflow()->startOfMonth();
 
-        if ($schedule) {
-            $availableSlots = $this->appointmentSelectionService->getAvailableSlotsForService($barbershop, $tomorrow, $schedule, $service);
-            if (!empty($availableSlots)) {
-                $days[] = [
-                    'date' => $tomorrow,
-                    'slots' => $availableSlots
+        for ($monthDate = $firstMonthStart->copy(); $monthDate->lte($lastMonthStart); $monthDate->addMonth()) {
+            $monthStart = $monthDate->copy()->startOfMonth();
+            $monthEnd = $monthDate->copy()->endOfMonth();
+            $calendarDays = [];
+
+            for ($offset = 0; $offset < $monthStart->dayOfWeekIso - 1; $offset++) {
+                $calendarDays[] = null;
+            }
+
+            for ($date = $monthStart->copy(); $date->lte($monthEnd); $date->addDay()) {
+                $currentDate = $date->copy();
+
+                $schedule = $barbershop->schedules
+                    ->where('day_of_week', $currentDate->dayOfWeekIso)
+                    ->first();
+
+                $slots = [];
+                $availableSlotCount = 0;
+                if ($schedule && $currentDate->gte($today)) {
+                    $slots = $this->appointmentSelectionService->getSlotsForService($barbershop, $currentDate, $schedule, $service);
+                    $availableSlotCount = collect($slots)->where('available', true)->count();
+                }
+
+                $day = [
+                    'index' => count($days),
+                    'date' => $currentDate,
+                    'iso_date' => $currentDate->format('Y-m-d'),
+                    'day_number' => $currentDate->format('d'),
+                    'weekday_label' => $weekdayLabels[$currentDate->dayOfWeekIso - 1],
+                    'slots' => $slots,
+                    'available_slot_count' => $availableSlotCount,
+                    'is_past' => $currentDate->lt($today),
                 ];
+
+                $days[] = $day;
+                $calendarDays[] = $day;
+            }
+
+            while (count($calendarDays) % 7 !== 0) {
+                $calendarDays[] = null;
+            }
+
+            $calendarMonths[] = [
+                'label' => $monthStart->format('F Y'),
+                'days' => $calendarDays,
+            ];
+        }
+
+        if ($preselectedDatetime) {
+            try {
+                $preselectedDate = Carbon::createFromFormat('Y-m-d H:i', $preselectedDatetime)->format('Y-m-d');
+            } catch (\Throwable) {
+                $preselectedDatetime = null;
             }
         }
 
-        return view('appointments.create', compact('barbershop', 'service', 'days'));
+        $hasAvailableSlots = collect($days)->contains(fn (array $day) => $day['available_slot_count'] > 0);
+        $initialSelectedDayIndex = collect($days)->search(
+            fn (array $day) => $preselectedDate !== null && $day['iso_date'] === $preselectedDate
+        );
+
+        if ($initialSelectedDayIndex === false) {
+            $initialSelectedDayIndex = $hasAvailableSlots
+                ? collect($days)->search(fn (array $day) => $day['available_slot_count'] > 0)
+                : collect($days)->search(fn (array $day) => $day['iso_date'] === $today->format('Y-m-d'));
+        }
+
+        $initialVisibleMonthIndex = 0;
+
+        if ($initialSelectedDayIndex !== false && isset($days[$initialSelectedDayIndex])) {
+            $selectedDate = $days[$initialSelectedDayIndex]['date'];
+            $initialVisibleMonthIndex = $selectedDate->isSameMonth($today) ? 0 : 1;
+        }
+
+        return view('appointments.create', compact(
+            'barbershop',
+            'service',
+            'days',
+            'calendarMonths',
+            'hasAvailableSlots',
+            'initialSelectedDayIndex',
+            'initialVisibleMonthIndex',
+            'preselectedDatetime',
+        ));
     }
 
     public function confirm(Request $request, Barbershop $barbershop)

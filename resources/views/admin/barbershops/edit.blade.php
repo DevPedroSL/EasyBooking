@@ -62,21 +62,52 @@
       </div>
 
       <div class="mb-6">
-        <label for="image" class="block text-sm font-bold text-gray-900 mb-2">Imagen de la barbería</label>
+        <label for="image" class="block text-sm font-bold text-gray-900 mb-2">Foto principal</label>
         @if($barbershop->image_url)
-          <div class="mb-3 flex h-40 w-full items-center justify-center rounded-2xl bg-white p-4 shadow-sm">
-            <img src="{{ $barbershop->image_url }}" alt="{{ $barbershop->name }}" class="h-full w-full object-contain">
+          <div class="mb-3 rounded-2xl border border-violet-100 bg-white p-4 shadow-sm">
+            <div class="flex h-40 w-full items-center justify-center overflow-hidden rounded-2xl bg-white">
+              <img src="{{ $barbershop->image_url }}" alt="{{ $barbershop->name }}" class="h-full w-full object-cover">
+            </div>
+            <label class="mt-3 inline-flex items-center gap-2 text-sm font-medium text-red-700">
+              <input type="checkbox" name="remove_image" value="1" class="rounded border-gray-300 text-red-600 shadow-sm focus:ring-red-500">
+              Quitar foto principal
+            </label>
           </div>
-          <label class="mb-3 inline-flex items-center gap-2 text-sm font-medium text-red-700">
-            <input type="checkbox" name="remove_image" value="1" class="rounded border-gray-300 text-red-600 shadow-sm focus:ring-red-500">
-            Quitar imagen actual
-          </label>
         @endif
         <input type="file" id="image" name="image" accept="image/*" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-600 focus:border-transparent">
         @error('image')
           <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
         @enderror
         @error('remove_image')
+          <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+        @enderror
+      </div>
+
+      <div class="mb-6">
+        <label for="gallery_images" class="block text-sm font-bold text-gray-900 mb-2">Fotos del carrusel</label>
+        @if(count($barbershop->gallery_images) > 0)
+          <div class="mb-4 grid gap-4 sm:grid-cols-2">
+            @foreach($barbershop->gallery_images as $galleryImage)
+              <div class="rounded-2xl border border-violet-100 bg-white p-4 shadow-sm">
+                <div class="flex h-40 w-full items-center justify-center overflow-hidden rounded-2xl bg-white">
+                  <img src="{{ $galleryImage['url'] }}" alt="{{ $barbershop->name }} carrusel {{ $loop->iteration }}" class="h-full w-full object-cover">
+                </div>
+                <label class="mt-3 inline-flex items-center gap-2 text-sm font-medium text-red-700">
+                  <input type="checkbox" name="remove_gallery_images[]" value="{{ $galleryImage['index'] }}" class="rounded border-gray-300 text-red-600 shadow-sm focus:ring-red-500">
+                  Quitar esta foto
+                </label>
+              </div>
+            @endforeach
+          </div>
+        @endif
+        <input type="file" id="gallery_images" name="gallery_images[]" accept="image/*" multiple class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-600 focus:border-transparent">
+        @error('gallery_images')
+          <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+        @enderror
+        @error('gallery_images.*')
+          <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+        @enderror
+        @error('remove_gallery_images')
           <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
         @enderror
       </div>

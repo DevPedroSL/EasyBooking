@@ -36,12 +36,19 @@ class BarbershopController extends Controller
             'phone' => 'required|string|max:20',
             'visibility' => 'required|in:public,private',
             'image' => 'nullable|image|max:3072',
+            'gallery_images' => 'nullable|array|max:4',
+            'gallery_images.*' => 'image|max:3072',
         ]);
 
         $validated['barber_id'] = auth()->id();
 
         if ($request->hasFile('image')) {
             $validated['image_path'] = $request->file('image')->store('barbershops', 'public');
+        }
+
+        $galleryImagePaths = $this->storeUploadedBarbershopGalleryImages($request);
+        if ($galleryImagePaths !== []) {
+            $validated['image_paths'] = $galleryImagePaths;
         }
 
         Barbershop::create($validated);
@@ -74,6 +81,10 @@ class BarbershopController extends Controller
             'visibility' => 'required|in:public,private',
             'image' => 'nullable|image|max:3072',
             'remove_image' => 'nullable|boolean',
+            'gallery_images' => 'nullable|array|max:4',
+            'gallery_images.*' => 'image|max:3072',
+            'remove_gallery_images' => 'nullable|array',
+            'remove_gallery_images.*' => 'integer',
         ]);
 
         $barbershop->update([
@@ -84,11 +95,18 @@ class BarbershopController extends Controller
             'visibility' => $validated['visibility'],
         ]);
 
+        [$remainingPaths, $removedPaths] = $this->barbershopImagePathsAfterRemovalSelection($barbershop, $request);
+        $newImageCount = count($request->file('gallery_images', []));
+
+        if (count($remainingPaths) + $newImageCount > 4) {
+            return back()
+                ->withErrors(['gallery_images' => 'Cada barbería puede tener como máximo 4 imágenes de carrusel.'])
+                ->withInput();
+        }
+
         if ($request->boolean('remove_image') && $barbershop->image_path) {
             Storage::disk('public')->delete($barbershop->image_path);
-            $barbershop->update([
-                'image_path' => null,
-            ]);
+            $barbershop->image_path = null;
         }
 
         if ($request->hasFile('image')) {
@@ -96,10 +114,20 @@ class BarbershopController extends Controller
                 Storage::disk('public')->delete($barbershop->image_path);
             }
 
-            $barbershop->update([
-                'image_path' => $request->file('image')->store('barbershops', 'public'),
-            ]);
+            $barbershop->image_path = $request->file('image')->store('barbershops', 'public');
         }
+
+        $this->deleteBarbershopImages($removedPaths);
+
+        $finalImagePaths = array_values(array_merge(
+            $remainingPaths,
+            $this->storeUploadedBarbershopGalleryImages($request)
+        ));
+
+        $barbershop->update([
+            'image_path' => $barbershop->image_path,
+            'image_paths' => $finalImagePaths === [] ? null : $finalImagePaths,
+        ]);
 
         return redirect()->route('barbershops.editMy')->with('success', 'Barbería actualizada correctamente.');
     }
@@ -139,9 +167,25 @@ class BarbershopController extends Controller
             'duration' => 'required|integer|min:1',
             'price' => 'required|numeric|min:0',
             'visibility' => 'required|in:public,private',
+            'images' => 'nullable|array|max:3',
+            'images.*' => 'image|max:3072',
         ]);
 
-        $barbershop->services()->create($validated);
+        $serviceData = [
+            'name' => $validated['name'],
+            'description' => $validated['description'] ?? null,
+            'duration' => $validated['duration'],
+            'price' => $validated['price'],
+            'visibility' => $validated['visibility'],
+        ];
+
+        $imagePaths = $this->storeUploadedServiceImages($request);
+        if ($imagePaths !== []) {
+            $serviceData['image_paths'] = $imagePaths;
+            $serviceData['image_path'] = $imagePaths[0];
+        }
+
+        $barbershop->services()->create($serviceData);
 
         return redirect()->route('barbershops.services.index')->with('success', 'Servicio creado correctamente.');
     }
@@ -173,9 +217,40 @@ class BarbershopController extends Controller
             'duration' => 'required|integer|min:1',
             'price' => 'required|numeric|min:0',
             'visibility' => 'required|in:public,private',
+            'images' => 'nullable|array|max:3',
+            'images.*' => 'image|max:3072',
+            'remove_images' => 'nullable|array',
+            'remove_images.*' => 'integer',
         ]);
 
-        $service->update($validated);
+        [$remainingPaths, $removedPaths] = $this->serviceImagePathsAfterRemovalSelection($service, $request);
+        $newImageCount = count($request->file('images', []));
+
+        if (count($remainingPaths) + $newImageCount > 3) {
+            return back()
+                ->withErrors(['images' => 'Cada servicio puede tener como maximo 3 imagenes.'])
+                ->withInput();
+        }
+
+        $service->update([
+            'name' => $validated['name'],
+            'description' => $validated['description'] ?? null,
+            'duration' => $validated['duration'],
+            'price' => $validated['price'],
+            'visibility' => $validated['visibility'],
+        ]);
+
+        $this->deleteServiceImages($removedPaths);
+
+        $finalImagePaths = array_values(array_merge(
+            $remainingPaths,
+            $this->storeUploadedServiceImages($request)
+        ));
+
+        $service->update([
+            'image_paths' => $finalImagePaths === [] ? null : $finalImagePaths,
+            'image_path' => $finalImagePaths[0] ?? null,
+        ]);
 
         return redirect()->route('barbershops.services.index')->with('success', 'Servicio actualizado correctamente.');
     }
@@ -183,9 +258,39 @@ class BarbershopController extends Controller
     public function image(Barbershop $barbershop): StreamedResponse
     {
         abort_unless($barbershop->isVisibleTo(auth()->user()), 404);
-        abort_unless($barbershop->image_path && Storage::disk('public')->exists($barbershop->image_path), 404);
+        $imagePath = $barbershop->image_path;
+        abort_unless($imagePath && Storage::disk('public')->exists($imagePath), 404);
 
-        return Storage::disk('public')->response($barbershop->image_path);
+        return Storage::disk('public')->response($imagePath);
+    }
+
+    public function galleryImage(Barbershop $barbershop, int $index): StreamedResponse
+    {
+        abort_unless($barbershop->isVisibleTo(auth()->user()), 404);
+
+        $imagePath = $barbershop->stored_image_paths[$index] ?? null;
+        abort_unless($imagePath && Storage::disk('public')->exists($imagePath), 404);
+
+        return Storage::disk('public')->response($imagePath);
+    }
+
+    public function serviceImage(Services $service): StreamedResponse
+    {
+        abort_unless($service->isVisibleTo(auth()->user()), 404);
+        $imagePath = $service->stored_image_paths[0] ?? null;
+        abort_unless($imagePath && Storage::disk('public')->exists($imagePath), 404);
+
+        return Storage::disk('public')->response($imagePath);
+    }
+
+    public function serviceGalleryImage(Services $service, int $index): StreamedResponse
+    {
+        abort_unless($service->isVisibleTo(auth()->user()), 404);
+
+        $imagePath = $service->stored_image_paths[$index] ?? null;
+        abort_unless($imagePath && Storage::disk('public')->exists($imagePath), 404);
+
+        return Storage::disk('public')->response($imagePath);
     }
 
     public function destroyService(Services $service)
@@ -201,8 +306,94 @@ class BarbershopController extends Controller
             return redirect()->route('barbershops.services.index')->with('error', 'No puedes eliminar un servicio que ya tiene citas asociadas.');
         }
 
+        $this->deleteServiceImages($service->stored_image_paths);
+
         $service->delete();
 
         return redirect()->route('barbershops.services.index')->with('success', 'Servicio eliminado correctamente.');
+    }
+
+    private function storeUploadedServiceImages(Request $request): array
+    {
+        return collect($request->file('images', []))
+            ->take(3)
+            ->map(fn ($image) => $image->store('services', 'public'))
+            ->all();
+    }
+
+    private function storeUploadedBarbershopGalleryImages(Request $request): array
+    {
+        return collect($request->file('gallery_images', []))
+            ->take(4)
+            ->map(fn ($image) => $image->store('barbershops', 'public'))
+            ->all();
+    }
+
+    private function barbershopImagePathsAfterRemovalSelection(Barbershop $barbershop, Request $request): array
+    {
+        $currentPaths = $barbershop->stored_image_paths;
+        $removeIndexes = collect($request->input('remove_gallery_images', []))
+            ->map(fn ($index) => (int) $index)
+            ->filter(fn ($index) => array_key_exists($index, $currentPaths))
+            ->unique()
+            ->values()
+            ->all();
+
+        $removedPaths = [];
+        $remainingPaths = [];
+
+        foreach ($currentPaths as $index => $path) {
+            if (in_array($index, $removeIndexes, true)) {
+                $removedPaths[] = $path;
+                continue;
+            }
+
+            $remainingPaths[] = $path;
+        }
+
+        return [$remainingPaths, $removedPaths];
+    }
+
+    private function serviceImagePathsAfterRemovalSelection(Services $service, Request $request): array
+    {
+        $currentPaths = $service->stored_image_paths;
+        $removeIndexes = collect($request->input('remove_images', []))
+            ->map(fn ($index) => (int) $index)
+            ->filter(fn ($index) => array_key_exists($index, $currentPaths))
+            ->unique()
+            ->values()
+            ->all();
+
+        $removedPaths = [];
+        $remainingPaths = [];
+
+        foreach ($currentPaths as $index => $path) {
+            if (in_array($index, $removeIndexes, true)) {
+                $removedPaths[] = $path;
+                continue;
+            }
+
+            $remainingPaths[] = $path;
+        }
+
+        return [$remainingPaths, $removedPaths];
+    }
+
+    private function deleteServiceImages(array $paths): void
+    {
+        foreach ($paths as $path) {
+            if ($path) {
+                Storage::disk('public')->delete($path);
+            }
+        }
+    }
+
+    private function deleteBarbershopImages(array $paths): void
+    {
+        foreach ($paths as $path) {
+            if ($path) {
+                Storage::disk('public')->delete($path);
+            }
+        }
     }
 }

@@ -11,53 +11,170 @@
     </div>
   </div>
 
-  <div class="eb-panel overflow-hidden p-8">
+  <div
+    class="eb-panel booking-calendar-panel overflow-hidden p-8"
+    x-data="{ visibleMonth: @js($initialVisibleMonthIndex), selectedDay: @js($initialSelectedDayIndex), selectedDatetime: @js($preselectedDatetime ?? '') }"
+  >
     <form action="{{ route('appointments.confirm', $barbershop) }}" method="GET">
       <input type="hidden" name="barbershop_id" value="{{ $barbershop->id }}">
       <input type="hidden" name="service_id" value="{{ $service->id }}">
 
+      <div class="booking-calendar-head mb-8">
+        <div>
+          <p class="booking-calendar-kicker">Seleccionar fecha y hora</p>
+          <h2 class="text-xl font-black text-gray-900">Mes actual y siguiente</h2>
+        </div>
+        <p class="booking-calendar-note">Elige un día para ver los horarios disponibles.</p>
+      </div>
+
       <div class="mb-6">
-        <h2 class="text-xl font-black text-gray-900 mb-4">Horarios Disponibles</h2>
         @error('datetime') <p class="mb-4 text-sm font-semibold text-red-600">{{ $message }}</p> @enderror
 
-        @forelse($days as $day)
-          <div class="mb-4">
-            <h3 class="text-lg font-bold text-violet-900 mb-2">{{ $day['date']->format('l, d M Y') }}</h3>
-            <div class="grid grid-cols-4 gap-2">
-              @foreach($day['slots'] as $slot)
-                <label class="flex items-center">
-                  <input type="radio" name="datetime" value="{{ $day['date']->format('Y-m-d') }} {{ $slot }}" required class="hidden peer">
-                  <div class="slot-choice transition-colors">
-                    {{ $slot }}
-                  </div>
-                </label>
+        <div class="booking-months-stack">
+          @foreach($calendarMonths as $month)
+          <div class="booking-month-shell" x-cloak x-show="visibleMonth === {{ $loop->index }}">
+            <div class="booking-month-title">{{ $month['label'] }}
+              <button
+              type="button"
+              class="booking-month-nav-button"
+              @click="visibleMonth = Math.max(0, visibleMonth - 1)"
+              :disabled="visibleMonth === 0"
+            >
+              <
+            </button>
+            <button
+              type="button"
+              class="booking-month-nav-button"
+              @click="visibleMonth = Math.min({{ count($calendarMonths) - 1 }}, visibleMonth + 1)"
+              :disabled="visibleMonth === {{ count($calendarMonths) - 1 }}"
+            >
+              >
+            </button>
+            </div>
+            <div class="booking-month-weekdays">
+              <span>Lun.</span>
+              <span>Mar.</span>
+              <span>Mie.</span>
+              <span>Jue.</span>
+              <span>Vie.</span>
+              <span>Sab.</span>
+              <span>Dom.</span>
+            </div>
+
+            <div class="booking-month-grid">
+              @foreach($month['days'] as $day)
+                @if($day === null)
+                  <div class="booking-day-spacer" aria-hidden="true"></div>
+                @else
+                  <button
+                    type="button"
+                    class="booking-day-button"
+                    :class="{ 'is-selected': selectedDay === {{ $day['index'] }}, 'is-empty': {{ empty($day['slots']) ? 'true' : 'false' }}, 'is-past': {{ $day['is_past'] ? 'true' : 'false' }} }"
+                    @click="visibleMonth = {{ $loop->parent->index }}; selectedDay = {{ $day['index'] }}; if (!selectedDatetime || !selectedDatetime.startsWith('{{ $day['iso_date'] }}')) { selectedDatetime = ''; }"
+                  >
+                    <span class="booking-day-week">{{ $day['weekday_label'] }}</span>
+                    <span class="booking-day-number">{{ $day['day_number'] }}</span>
+                    <span class="booking-day-pill">
+                      @if($day['is_past'])
+                        Pasado
+                      @elseif($day['available_slot_count'] === 0)
+                        Sin huecos
+                      @else
+                        {{ $day['available_slot_count'] }} horas
+                      @endif
+                    </span>
+                  </button>
+                @endif
               @endforeach
             </div>
           </div>
-        @empty
-          <p class="text-gray-600">No hay horarios disponibles para este servicio.</p>
-        @endforelse
+          @endforeach
+        </div>
       </div>
 
-      @if(!empty($days))
+      <div class="booking-slots-panel">
+        @foreach($days as $day)
+          <section x-cloak x-show="selectedDay === {{ $day['index'] }}" class="booking-slots-day">
+            <div class="booking-slots-head">
+              <div>
+                <p class="booking-calendar-kicker">Día seleccionado</p>
+                <h3 class="text-lg font-black text-violet-950">{{ $day['date']->format('l, d M Y') }}</h3>
+              </div>
+              <p class="booking-slots-meta">
+                @if($day['is_past'])
+                  Día no reservable
+                @elseif($day['available_slot_count'] > 0)
+                  {{ $day['available_slot_count'] }} horarios disponibles
+                @else
+                  Sin disponibilidad
+                @endif
+              </p>
+            </div>
+
+            @if(!empty($day['slots']))
+              <div class="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+                @foreach($day['slots'] as $slot)
+                  <label class="flex items-center">
+                    <input
+                      type="radio"
+                      name="datetime"
+                      value="{{ $day['iso_date'] }} {{ $slot['time'] }}"
+                      x-model="selectedDatetime"
+                      class="hidden peer"
+                      @disabled(!$slot['available'])
+                    >
+                    <div class="slot-choice transition-colors {{ $slot['available'] ? '' : 'slot-choice-unavailable' }}">
+                      {{ $slot['time'] }}
+                    </div>
+                  </label>
+                @endforeach
+              </div>
+            @elseif($day['is_past'])
+              <div class="booking-empty-day">
+                <p class="text-sm font-bold text-gray-700">
+                  Este día ya ha pasado.
+                </p>
+                <p class="mt-1 text-sm text-gray-500">
+                  Selecciona una fecha de hoy en adelante para continuar con la reserva.
+                </p>
+              </div>
+            @else
+              <div class="booking-empty-day">
+                <p class="text-sm font-bold text-gray-700">
+                  No hay horarios disponibles este día.
+                </p>
+                <p class="mt-1 text-sm text-gray-500">
+                  Se muestran todos los huecos del horario, pero no puedes seleccionar los que ya estén ocupados.
+                </p>
+              </div>
+            @endif
+          </section>
+        @endforeach
+
+        @unless($hasAvailableSlots)
+          <p class="mt-6 text-gray-600">No hay horarios disponibles para este servicio entre este mes y el siguiente.</p>
+        @endunless
+      </div>
+
+      @if($hasAvailableSlots)
         @auth
-          <div class="flex justify-end">
-            <button type="submit" class="eb-button px-6 py-3">
+          <div class="mt-8 flex justify-end">
+            <button type="submit" class="eb-button px-6 py-3 disabled:cursor-not-allowed disabled:opacity-50" :disabled="!selectedDatetime">
               Continuar
             </button>
           </div>
         @else
-          <div class="rounded-2xl border border-amber-200 bg-amber-50 p-5">
+          <div class="mt-8 rounded-2xl border border-amber-200 bg-amber-50 p-5">
             <p class="text-sm font-black uppercase tracking-wide text-amber-800">Aviso</p>
             <p class="mt-2 text-sm font-medium text-amber-900">
               Para reservar una cita, selecciona una hora y después inicia sesión o regístrate. Guardaremos tu selección para que puedas confirmarla justo después.
             </p>
 
             <div class="mt-4 flex flex-col gap-3 sm:flex-row">
-              <button type="submit" formaction="{{ route('login') }}" class="eb-button px-6 py-3 text-center">
+              <button type="submit" formaction="{{ route('login') }}" class="eb-button px-6 py-3 text-center disabled:cursor-not-allowed disabled:opacity-50" :disabled="!selectedDatetime">
                 Iniciar sesión
               </button>
-              <button type="submit" formaction="{{ route('register') }}" class="rounded-xl border border-amber-300 px-6 py-3 text-center text-sm font-bold text-amber-900 transition hover:bg-amber-100">
+              <button type="submit" formaction="{{ route('register') }}" class="rounded-xl border border-amber-300 px-6 py-3 text-center text-sm font-bold text-amber-900 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50" :disabled="!selectedDatetime">
                 Registrarse
               </button>
             </div>

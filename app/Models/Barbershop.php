@@ -19,9 +19,11 @@ class Barbershop extends Model
         'phone',
         'visibility',
         'image_path',
+        'image_paths',
     ];
 
     protected $casts = [
+        'image_paths' => 'array',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -66,6 +68,45 @@ class Barbershop extends Model
         }
 
         return $user !== null && ($user->role === 'admin' || $user->id === $this->barber_id);
+    }
+
+    public function getStoredImagePathsAttribute(): array
+    {
+        $paths = $this->image_paths;
+
+        if (is_array($paths) && $paths !== []) {
+            return array_values(array_filter($paths, fn ($path) => is_string($path) && $path !== ''));
+        }
+
+        return [];
+    }
+
+    public function getGalleryImagesAttribute(): array
+    {
+        return collect($this->stored_image_paths)
+            ->map(function (string $path, int $index): ?array {
+                if ($this->image_path && $path === $this->image_path) {
+                    return null;
+                }
+
+                return [
+                    'index' => $index,
+                    'url' => route('barbershops.images.show', [
+                        'barbershop' => $this,
+                        'index' => $index,
+                    ], false),
+                ];
+            })
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    public function getImageUrlsAttribute(): array
+    {
+        return collect($this->gallery_images)
+            ->pluck('url')
+            ->all();
     }
 
     public function getImageUrlAttribute(): ?string

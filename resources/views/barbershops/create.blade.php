@@ -46,10 +46,18 @@
             </div>
 
             <div class="mb-6">
-                <label for="image" class="block text-sm font-medium text-gray-700">Imagen de la barbería</label>
+                <label for="image" class="block text-sm font-medium text-gray-700">Foto principal</label>
                 <input type="file" name="image" id="image" accept="image/*" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-violet-500 focus:border-violet-500">
-                <p class="mt-1 text-xs text-gray-500">Puedes subir una imagen JPG, PNG o WebP de hasta 3 MB.</p>
+                <p class="mt-1 text-xs text-gray-500">La imagen principal que se verá arriba en la barbería. JPG, PNG o WebP de hasta 3 MB.</p>
                 @error('image') <p class="text-red-500 text-sm">{{ $message }}</p> @enderror
+            </div>
+
+            <div class="mb-6">
+                <label for="gallery_images" class="block text-sm font-medium text-gray-700">Fotos del carrusel</label>
+                <input type="file" name="gallery_images[]" id="gallery_images" accept="image/*" multiple class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-violet-500 focus:border-violet-500">
+                <p class="mt-1 text-xs text-gray-500">Puedes subir hasta 4 imágenes para la galería inferior, de hasta 3 MB cada una.</p>
+                @error('gallery_images') <p class="text-red-500 text-sm">{{ $message }}</p> @enderror
+                @error('gallery_images.*') <p class="text-red-500 text-sm">{{ $message }}</p> @enderror
             </div>
 
             <div class="flex justify-end">

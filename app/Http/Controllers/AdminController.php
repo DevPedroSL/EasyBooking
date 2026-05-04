@@ -54,15 +54,26 @@ class AdminController extends Controller
             'visibility' => 'required|in:public,private',
             'image' => 'nullable|image|max:3072',
             'remove_image' => 'nullable|boolean',
+            'gallery_images' => 'nullable|array|max:4',
+            'gallery_images.*' => 'image|max:3072',
+            'remove_gallery_images' => 'nullable|array',
+            'remove_gallery_images.*' => 'integer',
         ]);
 
-        $barbershop->update(collect($validated)->except(['image', 'remove_image'])->all());
+        $barbershop->update(collect($validated)->except(['image', 'remove_image', 'gallery_images', 'remove_gallery_images'])->all());
+
+        [$remainingPaths, $removedPaths] = $this->barbershopImagePathsAfterRemovalSelection($barbershop, $request);
+        $newImageCount = count($request->file('gallery_images', []));
+
+        if (count($remainingPaths) + $newImageCount > 4) {
+            return back()
+                ->withErrors(['gallery_images' => 'Cada barbería puede tener como máximo 4 imágenes de carrusel.'])
+                ->withInput();
+        }
 
         if ($request->boolean('remove_image') && $barbershop->image_path) {
             Storage::disk('public')->delete($barbershop->image_path);
-            $barbershop->update([
-                'image_path' => null,
-            ]);
+            $barbershop->image_path = null;
         }
 
         if ($request->hasFile('image')) {
@@ -70,10 +81,20 @@ class AdminController extends Controller
                 Storage::disk('public')->delete($barbershop->image_path);
             }
 
-            $barbershop->update([
-                'image_path' => $request->file('image')->store('barbershops', 'public'),
-            ]);
+            $barbershop->image_path = $request->file('image')->store('barbershops', 'public');
         }
+
+        $this->deleteBarbershopImages($removedPaths);
+
+        $finalImagePaths = array_values(array_merge(
+            $remainingPaths,
+            $this->storeUploadedBarbershopGalleryImages($request)
+        ));
+
+        $barbershop->update([
+            'image_path' => $barbershop->image_path,
+            'image_paths' => $finalImagePaths === [] ? null : $finalImagePaths,
+        ]);
 
         return redirect()->route('admin.barbershops.index')->with('success', 'Barbería actualizada correctamente.');
     }
@@ -82,9 +103,7 @@ class AdminController extends Controller
     {
         $this->ensureAdmin();
 
-        if ($barbershop->image_path) {
-            Storage::disk('public')->delete($barbershop->image_path);
-        }
+        $this->deleteBarbershopImages($barbershop->stored_image_paths);
 
         $barbershop->delete();
 
@@ -138,5 +157,47 @@ class AdminController extends Controller
         $user->delete();
 
         return redirect()->route('admin.users.index')->with('success', 'Usuario eliminado correctamente.');
+    }
+
+    private function storeUploadedBarbershopGalleryImages(Request $request): array
+    {
+        return collect($request->file('gallery_images', []))
+            ->take(4)
+            ->map(fn ($image) => $image->store('barbershops', 'public'))
+            ->all();
+    }
+
+    private function barbershopImagePathsAfterRemovalSelection(Barbershop $barbershop, Request $request): array
+    {
+        $currentPaths = $barbershop->stored_image_paths;
+        $removeIndexes = collect($request->input('remove_gallery_images', []))
+            ->map(fn ($index) => (int) $index)
+            ->filter(fn ($index) => array_key_exists($index, $currentPaths))
+            ->unique()
+            ->values()
+            ->all();
+
+        $removedPaths = [];
+        $remainingPaths = [];
+
+        foreach ($currentPaths as $index => $path) {
+            if (in_array($index, $removeIndexes, true)) {
+                $removedPaths[] = $path;
+                continue;
+            }
+
+            $remainingPaths[] = $path;
+        }
+
+        return [$remainingPaths, $removedPaths];
+    }
+
+    private function deleteBarbershopImages(array $paths): void
+    {
+        foreach ($paths as $path) {
+            if ($path) {
+                Storage::disk('public')->delete($path);
+            }
+        }
     }
 }

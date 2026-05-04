@@ -1,55 +1,98 @@
-<x-guest-layout>
-    @section('title', 'Iniciar Sesión - EasyBooking')
+@extends('layouts.app')
 
-    <!-- Session Status -->
-    <x-auth-session-status class="mb-4" :status="session('status')" />
+@section('title', 'Iniciar Sesion - EasyBooking')
 
-    @if(session()->has('pending_appointment'))
-        <div class="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
-            Tu cita seleccionada se ha guardado. En cuanto inicies sesión, te llevaremos a la confirmación.
-        </div>
-    @endif
-
-    <form method="POST" action="{{ route('login') }}">
-        @csrf
-
-        <!-- Email Address -->
+@section('content')
+<div class="page-shell max-w-2xl">
+    <div class="page-heading">
         <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autofocus autocomplete="username" />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
+            <h1 class="page-title">Iniciar sesion</h1>
+            <p class="page-subtitle">Accede a tu cuenta para gestionar tus citas o continuar con una reserva pendiente.</p>
         </div>
+    </div>
 
-        <!-- Password -->
-        <div class="mt-4">
-            <x-input-label for="password" :value="__('Password')" />
+    <div class="eb-panel p-8">
+        @if (session('status'))
+            <div class="mb-4 rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm font-medium text-violet-800">
+                {{ session('status') }}
+            </div>
+        @endif
 
-            <x-text-input id="password" class="block mt-1 w-full"
-                            type="password"
-                            name="password"
-                            required autocomplete="current-password" />
+        @if(session()->has('pending_appointment'))
+            <div class="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
+                Tu cita seleccionada se ha guardado. En cuanto inicies sesion, te llevaremos a la confirmacion.
+            </div>
+        @endif
 
-            <x-input-error :messages="$errors->get('password')" class="mt-2" />
-        </div>
+        <form method="POST" action="{{ route('login') }}" class="space-y-6">
+            @csrf
 
-        <!-- Remember Me -->
-        <div class="block mt-4">
-            <label for="remember_me" class="inline-flex items-center">
-                <input id="remember_me" type="checkbox" class="rounded border-gray-300 text-violet-600 shadow-sm focus:ring-violet-500" name="remember">
-                <span class="ms-2 text-sm text-gray-600">{{ __('Remember me') }}</span>
+            <div>
+                <label for="email" class="mb-2 block text-sm font-bold text-gray-900">Email</label>
+                <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    value="{{ old('email') }}"
+                    required
+                    autofocus
+                    autocomplete="username"
+                    class="w-full rounded-lg border border-gray-300 px-4 py-3 shadow-sm focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-200"
+                >
+                @error('email')
+                    <p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <div>
+                <div class="mb-2 flex items-center justify-between gap-4">
+                    <label for="password" class="block text-sm font-bold text-gray-900">Contrasena</label>
+                    @if (Route::has('password.request'))
+                        <a
+                            href="{{ route('password.request') }}"
+                            class="text-sm font-semibold text-violet-700 transition hover:text-violet-900"
+                        >
+                            Has olvidado tu contrasena?
+                        </a>
+                    @endif
+                </div>
+
+                <input
+                    id="password"
+                    name="password"
+                    type="password"
+                    required
+                    autocomplete="current-password"
+                    class="w-full rounded-lg border border-gray-300 px-4 py-3 shadow-sm focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-200"
+                >
+                @error('password')
+                    <p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <label for="remember_me" class="flex items-center gap-3 text-sm font-medium text-gray-700">
+                <input
+                    id="remember_me"
+                    type="checkbox"
+                    name="remember"
+                    class="h-4 w-4 rounded border-gray-300 text-violet-600 focus:ring-violet-500"
+                >
+                <span>Recordarme</span>
             </label>
-        </div>
 
-        <div class="flex items-center justify-end mt-4">
-            @if (Route::has('password.request'))
-                <a class="underline text-sm text-gray-600 hover:text-violet-800 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500" href="{{ route('password.request') }}">
-                    {{ __('Forgot your password?') }}
-                </a>
-            @endif
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <p class="text-sm text-gray-600">
+                    No tienes cuenta?
+                    <a href="{{ route('register') }}" class="font-semibold text-violet-700 transition hover:text-violet-900">
+                        Registrate
+                    </a>
+                </p>
 
-            <x-primary-button class="ms-3">
-                {{ __('Log in') }}
-            </x-primary-button>
-        </div>
-    </form>
-</x-guest-layout>
+                <button type="submit" class="eb-button px-6 py-3">
+                    Iniciar sesion
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+@endsection

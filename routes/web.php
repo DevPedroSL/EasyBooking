@@ -29,6 +29,9 @@ Route::get('/inicio', function () {
 });
 
 Route::get('/barbershops/{barbershop}/image', [BarbershopController::class, 'image'])->name('barbershops.image');
+Route::get('/barbershops/{barbershop}/images/{index}', [BarbershopController::class, 'galleryImage'])->name('barbershops.images.show');
+Route::get('/services/{service}/image', [BarbershopController::class, 'serviceImage'])->name('services.image');
+Route::get('/services/{service}/images/{index}', [BarbershopController::class, 'serviceGalleryImage'])->name('services.images.show');
 Route::get('/users/{user}/avatar', [ProfileController::class, 'avatar'])->name('users.avatar');
 
 Route::get('/barbershop/{name}', function ($name) {

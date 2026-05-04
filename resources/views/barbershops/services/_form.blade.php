@@ -47,6 +47,39 @@
     @error('visibility') <p class="text-sm text-red-500">{{ $message }}</p> @enderror
 </div>
 
+<div class="mt-4">
+    <label for="images" class="block text-sm font-medium text-gray-700">Imagenes del servicio</label>
+    <input type="file" name="images[]" id="images" accept="image/*" multiple class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-violet-500 focus:ring-violet-500">
+    <p class="mt-1 text-xs text-gray-500">Puedes subir hasta 3 imagenes. Maximo 3 MB por imagen.</p>
+    @error('images') <p class="text-sm text-red-500">{{ $message }}</p> @enderror
+    @error('images.*') <p class="text-sm text-red-500">{{ $message }}</p> @enderror
+
+    @if(isset($service) && count($service->image_urls) > 0)
+        <div class="mt-4 rounded-xl border border-gray-200 bg-gray-50 p-4">
+            <p class="mb-3 text-sm font-semibold text-gray-700">Imagenes actuales</p>
+            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                @foreach($service->image_urls as $index => $imageUrl)
+                    <label class="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
+                        <div class="flex h-32 w-full items-center justify-center overflow-hidden rounded-xl bg-gray-50">
+                            <img src="{{ $imageUrl }}" alt="{{ $service->name }} {{ $index + 1 }}" class="h-full w-full object-cover">
+                        </div>
+
+                        <span class="mt-3 inline-flex items-center gap-3 text-sm font-medium text-gray-700">
+                            <input
+                                type="checkbox"
+                                name="remove_images[]"
+                                value="{{ $index }}"
+                                class="h-4 w-4 rounded border-gray-300 text-violet-600 focus:ring-violet-500"
+                            >
+                            <span>Eliminar esta imagen</span>
+                        </span>
+                    </label>
+                @endforeach
+            </div>
+        </div>
+    @endif
+</div>
+
 <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
     <a href="{{ route('barbershops.services.index') }}" class="inline-flex min-h-10 items-center justify-center rounded-lg bg-gray-200 px-4 py-2 text-sm font-bold text-gray-800 transition hover:bg-gray-300">
         Cancelar
