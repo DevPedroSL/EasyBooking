@@ -45,16 +45,8 @@
             </div>
 
             <div>
-                <div class="mb-2 flex items-center justify-between gap-4">
+                <div class="mb-2">
                     <label for="password" class="block text-sm font-bold text-gray-900">Contrasena</label>
-                    @if (Route::has('password.request'))
-                        <a
-                            href="{{ route('password.request') }}"
-                            class="text-sm font-semibold text-violet-700 transition hover:text-violet-900"
-                        >
-                            Has olvidado tu contrasena?
-                        </a>
-                    @endif
                 </div>
 
                 <input
@@ -68,6 +60,17 @@
                 @error('password')
                     <p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>
                 @enderror
+            </div>
+
+            <div class="mt-2">
+                @if (Route::has('password.request'))
+                    <a
+                        href="{{ route('password.request') }}"
+                        class="text-sm font-semibold text-violet-700 transition hover:text-violet-900"
+                    >
+                         Has olvidado tu contrasena?
+                    </a>
+                    @endif
             </div>
 
             <label for="remember_me" class="flex items-center gap-3 text-sm font-medium text-gray-700">

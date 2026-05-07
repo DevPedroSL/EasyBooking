@@ -116,6 +116,25 @@
         padding: 0.9rem 1rem;
     }
 
+    .barbershop-schedule-grid {
+        display: grid;
+        gap: 0.85rem;
+        margin-top: 1.5rem;
+    }
+
+    .barbershop-schedule-day {
+        border: 1px solid rgba(143, 106, 216, 0.18);
+        border-radius: 18px;
+        background: #fbf9ff;
+        padding: 1rem;
+    }
+
+    .barbershop-schedule-times {
+        display: grid;
+        gap: 0.75rem;
+        margin-top: 0.9rem;
+    }
+
     @media (min-width: 768px) {
         .barbershop-edit-hero-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -124,11 +143,21 @@
         .barbershop-edit-fields {
             grid-template-columns: repeat(2, minmax(0, 1fr));
         }
+
+        .barbershop-schedule-times {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
     }
 
 </style>
 
 <div class="page-shell max-w-6xl">
+    @php
+        $schedulesByDay = $barbershop->schedules->sortBy('start_time')->groupBy('day_of_week');
+        $storedScheduleDays = $schedulesByDay->keys()->map(fn ($day) => (int) $day)->all();
+        $selectedScheduleDays = collect(old('schedule_days', $storedScheduleDays))->map(fn ($day) => (int) $day)->all();
+    @endphp
+
     <div class="barbershop-edit-page">
         <section class="barbershop-edit-hero">
             <p class="text-sm font-black uppercase tracking-[0.2em] text-violet-700">Mi barberia</p>
@@ -145,7 +174,7 @@
                         Administra servicios, precios, duraciones e imagenes desde su panel especifico.
                     </p>
                     <a href="{{ route('barbershops.services.index') }}" class="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl bg-violet-700 px-5 py-3 text-sm font-black text-white transition hover:bg-violet-800">
-                        Ir a servicios
+                        Editar servicios
                     </a>
                 </div>
             </div>
@@ -225,6 +254,93 @@
                             <p class="mt-2 text-xs font-medium text-gray-500">Las barberias publicas aparecen en Explorar. Las privadas solo las ve su barbero y el admin.</p>
                             @error('visibility') <p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p> @enderror
                         </div>
+                    </div>
+                </div>
+
+                <div class="barbershop-edit-section">
+                    <p class="text-xs font-black uppercase tracking-[0.16em] text-violet-700">Horario</p>
+                    <h2 class="mt-2 text-2xl font-black text-gray-900">Cuando puede reservar el cliente</h2>
+                    <p class="mt-2 text-sm leading-6 text-gray-700">
+                        Marca los dias abiertos y ajusta la apertura y cierre. Las reservas y la agenda usan este horario.
+                    </p>
+                    @error('schedule_days') <p class="mt-3 text-sm font-semibold text-red-600">{{ $message }}</p> @enderror
+
+                    <div class="mt-6">
+                        <label for="slot_interval_minutes" class="mb-2 block text-sm font-bold text-gray-900">Frecuencia de citas</label>
+                        <select name="slot_interval_minutes" id="slot_interval_minutes" class="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 shadow-sm focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-200">
+                            <option value="15" @selected((int) old('slot_interval_minutes', $barbershop->slot_interval_minutes ?? 60) === 15)>Cada 15 minutos</option>
+                            <option value="30" @selected((int) old('slot_interval_minutes', $barbershop->slot_interval_minutes ?? 60) === 30)>Cada 30 minutos</option>
+                            <option value="45" @selected((int) old('slot_interval_minutes', $barbershop->slot_interval_minutes ?? 60) === 45)>Cada 45 minutos</option>
+                            <option value="60" @selected((int) old('slot_interval_minutes', $barbershop->slot_interval_minutes ?? 60) === 60)>Cada 1 hora</option>
+                        </select>
+                        <p class="mt-2 text-xs font-medium text-gray-500">Define cada cuanto aparece un hueco disponible para reservar.</p>
+                        @error('slot_interval_minutes') <p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div class="barbershop-schedule-grid">
+                        @foreach($weekdays as $day => $label)
+                            @php
+                                $daySchedules = $schedulesByDay->get($day, collect())->values();
+                            @endphp
+
+                            <div class="barbershop-schedule-day">
+                                <label class="inline-flex items-center gap-3 text-sm font-black text-gray-900">
+                                    <input
+                                        type="checkbox"
+                                        name="schedule_days[]"
+                                        value="{{ $day }}"
+                                        class="h-4 w-4 rounded border-gray-300 text-violet-700 focus:ring-violet-500"
+                                        @checked(in_array($day, $selectedScheduleDays, true))
+                                    >
+                                    <span>{{ $label }}</span>
+                                </label>
+
+                                <div class="mt-4 space-y-4">
+                                    @for($interval = 0; $interval < 2; $interval++)
+                                        @php
+                                            $schedule = $daySchedules->get($interval);
+                                            $defaultStartTime = $schedule
+                                                ? \Carbon\Carbon::parse($schedule->start_time)->format('H:i')
+                                                : ($interval === 0 ? '10:00' : '');
+                                            $defaultEndTime = $schedule
+                                                ? \Carbon\Carbon::parse($schedule->end_time)->format('H:i')
+                                                : ($interval === 0 ? '20:00' : '');
+                                        @endphp
+
+                                        <div>
+                                            <p class="text-xs font-black uppercase tracking-[0.12em] text-violet-700">
+                                                Tramo {{ $interval + 1 }}{{ $interval === 1 ? ' opcional' : '' }}
+                                            </p>
+
+                                            <div class="barbershop-schedule-times">
+                                                <div>
+                                                    <label for="schedule_{{ $day }}_{{ $interval }}_start" class="mb-2 block text-sm font-bold text-gray-900">Apertura</label>
+                                                    <input
+                                                        type="time"
+                                                        name="schedules[{{ $day }}][{{ $interval }}][start_time]"
+                                                        id="schedule_{{ $day }}_{{ $interval }}_start"
+                                                        value="{{ old("schedules.$day.$interval.start_time", $defaultStartTime) }}"
+                                                        class="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 shadow-sm focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-200"
+                                                    >
+                                                    @error("schedules.$day.$interval.start_time") <p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p> @enderror
+                                                </div>
+                                                <div>
+                                                    <label for="schedule_{{ $day }}_{{ $interval }}_end" class="mb-2 block text-sm font-bold text-gray-900">Cierre</label>
+                                                    <input
+                                                        type="time"
+                                                        name="schedules[{{ $day }}][{{ $interval }}][end_time]"
+                                                        id="schedule_{{ $day }}_{{ $interval }}_end"
+                                                        value="{{ old("schedules.$day.$interval.end_time", $defaultEndTime) }}"
+                                                        class="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 shadow-sm focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-200"
+                                                    >
+                                                    @error("schedules.$day.$interval.end_time") <p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p> @enderror
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endfor
+                                </div>
+                            </div>
+                        @endforeach
                     </div>
                 </div>
 

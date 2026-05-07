@@ -45,6 +45,80 @@
                 @error('visibility') <p class="text-red-500 text-sm">{{ $message }}</p> @enderror
             </div>
 
+            @php($selectedScheduleDays = collect(old('schedule_days', [1, 2, 3, 4, 5]))->map(fn ($day) => (int) $day)->all())
+
+            <div class="mb-6">
+                <p class="block text-sm font-medium text-gray-700">Horario semanal</p>
+                <p class="mt-1 text-xs text-gray-500">Marca los días que abrirá tu barbería y define la hora de apertura y cierre.</p>
+                @error('schedule_days') <p class="text-red-500 text-sm">{{ $message }}</p> @enderror
+
+                <div class="mt-3 space-y-3">
+                    @foreach($weekdays as $day => $label)
+                        <div class="rounded-md border border-gray-200 bg-gray-50 p-3">
+                            <label class="flex items-center gap-3 text-sm font-semibold text-gray-800">
+                                <input
+                                    type="checkbox"
+                                    name="schedule_days[]"
+                                    value="{{ $day }}"
+                                    class="h-4 w-4 rounded border-gray-300 text-violet-700 focus:ring-violet-500"
+                                    @checked(in_array($day, $selectedScheduleDays, true))
+                                >
+                                <span>{{ $label }}</span>
+                            </label>
+
+                            <div class="mt-3 space-y-3">
+                                @for($interval = 0; $interval < 2; $interval++)
+                                    @php
+                                        $defaultStartTime = $interval === 0 ? '10:00' : '';
+                                        $defaultEndTime = $interval === 0 ? '20:00' : '';
+                                    @endphp
+
+                                    <div>
+                                        <p class="text-xs font-bold text-gray-700">Tramo {{ $interval + 1 }}{{ $interval === 1 ? ' (opcional)' : '' }}</p>
+                                        <div class="mt-2 grid gap-3 sm:grid-cols-2">
+                                            <div>
+                                                <label for="schedule_{{ $day }}_{{ $interval }}_start" class="block text-xs font-medium text-gray-600">Apertura</label>
+                                                <input
+                                                    type="time"
+                                                    name="schedules[{{ $day }}][{{ $interval }}][start_time]"
+                                                    id="schedule_{{ $day }}_{{ $interval }}_start"
+                                                    value="{{ old("schedules.$day.$interval.start_time", $defaultStartTime) }}"
+                                                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-violet-500 focus:border-violet-500"
+                                                >
+                                                @error("schedules.$day.$interval.start_time") <p class="text-red-500 text-sm">{{ $message }}</p> @enderror
+                                            </div>
+                                            <div>
+                                                <label for="schedule_{{ $day }}_{{ $interval }}_end" class="block text-xs font-medium text-gray-600">Cierre</label>
+                                                <input
+                                                    type="time"
+                                                    name="schedules[{{ $day }}][{{ $interval }}][end_time]"
+                                                    id="schedule_{{ $day }}_{{ $interval }}_end"
+                                                    value="{{ old("schedules.$day.$interval.end_time", $defaultEndTime) }}"
+                                                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-violet-500 focus:border-violet-500"
+                                                >
+                                                @error("schedules.$day.$interval.end_time") <p class="text-red-500 text-sm">{{ $message }}</p> @enderror
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endfor
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <label for="slot_interval_minutes" class="block text-sm font-medium text-gray-700">Frecuencia de citas</label>
+                <select name="slot_interval_minutes" id="slot_interval_minutes" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-violet-500 focus:border-violet-500">
+                    <option value="15" @selected((int) old('slot_interval_minutes', 60) === 15)>Cada 15 minutos</option>
+                    <option value="30" @selected((int) old('slot_interval_minutes', 60) === 30)>Cada 30 minutos</option>
+                    <option value="45" @selected((int) old('slot_interval_minutes', 60) === 45)>Cada 45 minutos</option>
+                    <option value="60" @selected((int) old('slot_interval_minutes', 60) === 60)>Cada 1 hora</option>
+                </select>
+                <p class="mt-1 text-xs text-gray-500">Define cada cuánto aparece un hueco disponible para reservar.</p>
+                @error('slot_interval_minutes') <p class="text-red-500 text-sm">{{ $message }}</p> @enderror
+            </div>
+
             <div class="mb-6">
                 <label for="image" class="block text-sm font-medium text-gray-700">Foto principal</label>
                 <input type="file" name="image" id="image" accept="image/*" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-violet-500 focus:border-violet-500">

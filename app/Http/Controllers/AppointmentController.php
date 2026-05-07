@@ -19,19 +19,19 @@ class AppointmentController extends Controller
 
     public function create(Request $request, Barbershop $barbershop, Services $service)
     {
-        abort_unless($barbershop->isVisibleTo(auth()->user()), 404);
+        abort_unless($barbershop->isVisibleTo(Auth::user()), 404);
 
         // Ensure service belongs to barbershop
         if ($service->barbershop_id != $barbershop->id) {
             abort(404);
         }
 
-        abort_unless($service->isVisibleTo(auth()->user()), 404);
+        abort_unless($service->isVisibleTo(Auth::user()), 404);
 
         $today = Carbon::today();
         $days = [];
         $calendarMonths = [];
-        $preselectedDatetime = $request->old('datetime');
+        $preselectedDatetime = $request->old('datetime', $request->query('datetime'));
         $preselectedDate = null;
         $weekdayLabels = ['Lun.', 'Mar.', 'Mie.', 'Jue.', 'Vie.', 'Sab.', 'Dom.'];
         $firstMonthStart = $today->copy()->startOfMonth();
@@ -49,14 +49,15 @@ class AppointmentController extends Controller
             for ($date = $monthStart->copy(); $date->lte($monthEnd); $date->addDay()) {
                 $currentDate = $date->copy();
 
-                $schedule = $barbershop->schedules
+                $schedules = $barbershop->schedules
                     ->where('day_of_week', $currentDate->dayOfWeekIso)
-                    ->first();
+                    ->sortBy('start_time')
+                    ->values();
 
                 $slots = [];
                 $availableSlotCount = 0;
-                if ($schedule && $currentDate->gte($today)) {
-                    $slots = $this->appointmentSelectionService->getSlotsForService($barbershop, $currentDate, $schedule, $service);
+                if ($schedules->isNotEmpty() && $currentDate->gte($today)) {
+                    $slots = $this->appointmentSelectionService->getSlotsForServiceInSchedules($barbershop, $currentDate, $schedules, $service);
                     $availableSlotCount = collect($slots)->where('available', true)->count();
                 }
 
@@ -125,7 +126,7 @@ class AppointmentController extends Controller
 
     public function confirm(Request $request, Barbershop $barbershop)
     {
-        abort_unless($barbershop->isVisibleTo(auth()->user()), 404);
+        abort_unless($barbershop->isVisibleTo(Auth::user()), 404);
 
         $selection = $this->appointmentSelectionService->validateSelectionRequest($request, $barbershop);
 
@@ -133,6 +134,12 @@ class AppointmentController extends Controller
             return redirect()
                 ->route('appointments.create', ['barbershop' => $barbershop, 'service' => $selection['service']])
                 ->withErrors(['datetime' => 'El horario seleccionado no está disponible.']);
+        }
+
+        if ($this->appointmentSelectionService->clientHasAppointmentOnDate(Auth::id(), $selection['startTime'])) {
+            return redirect()
+                ->route('appointments.create', ['barbershop' => $barbershop, 'service' => $selection['service']])
+                ->withErrors(['datetime' => 'Ya tienes una cita reservada para este día.']);
         }
 
         return view('appointments.confirm', [
@@ -146,7 +153,7 @@ class AppointmentController extends Controller
 
     public function store(Request $request, Barbershop $barbershop)
     {
-        abort_unless($barbershop->isVisibleTo(auth()->user()), 404);
+        abort_unless($barbershop->isVisibleTo(Auth::user()), 404);
 
         $selection = $this->appointmentSelectionService->validateSelectionRequest($request, $barbershop, [
             'client_comment' => 'nullable|string|max:150',
@@ -161,6 +168,13 @@ class AppointmentController extends Controller
             return redirect()
                 ->route('appointments.create', ['barbershop' => $barbershop, 'service' => $service])
                 ->withErrors(['datetime' => 'El horario seleccionado no está disponible.'])
+                ->withInput();
+        }
+
+        if ($this->appointmentSelectionService->clientHasAppointmentOnDate(Auth::id(), $startTime)) {
+            return redirect()
+                ->route('appointments.create', ['barbershop' => $barbershop, 'service' => $service])
+                ->withErrors(['datetime' => 'Ya tienes una cita reservada para este día.'])
                 ->withInput();
         }
 
@@ -196,7 +210,10 @@ class AppointmentController extends Controller
 
     public function my()
     {
-        $appointments = Auth::user()->appointmentsAsClient()->with('barbershop', 'service')->get();
+        $appointments = Appointments::where('client_id', Auth::id())
+            ->with('barbershop', 'service')
+            ->get();
+
         return view('appointments.my', compact('appointments'));
     }
 
@@ -216,6 +233,146 @@ class AppointmentController extends Controller
         return view('appointments.barber', compact('appointments', 'barbershop'));
     }
 
+    public function barberAgenda(Request $request)
+    {
+        $barbershop = Auth::user()->barbershop;
+        if (!$barbershop) {
+            abort(403, 'No tienes una barbería asignada.');
+        }
+
+        $today = Carbon::today();
+        $firstMonthStart = $today->copy()->startOfMonth();
+        $lastMonthStart = $today->copy()->addMonthNoOverflow()->startOfMonth();
+        $calendarEnd = $lastMonthStart->copy()->endOfMonth();
+        $weekdayLabels = ['Lun.', 'Mar.', 'Mie.', 'Jue.', 'Vie.', 'Sab.', 'Dom.'];
+
+        try {
+            $selectedDate = $request->query('date')
+                ? Carbon::createFromFormat('Y-m-d', (string) $request->query('date'))->startOfDay()
+                : $today->copy();
+        } catch (\Throwable) {
+            $selectedDate = $today->copy();
+        }
+
+        if ($selectedDate->lt($firstMonthStart) || $selectedDate->gt($calendarEnd)) {
+            $selectedDate = $today->copy();
+        }
+
+        $schedules = $barbershop->schedules
+            ->where('day_of_week', $selectedDate->dayOfWeekIso)
+            ->sortBy('start_time')
+            ->values();
+        $schedule = $schedules->first();
+
+        $appointmentCountsByDate = Appointments::where('barbershop_id', $barbershop->id)
+            ->whereBetween('appointment_date', [$firstMonthStart->format('Y-m-d'), $calendarEnd->format('Y-m-d')])
+            ->whereIn('status', ['pending', 'accepted'])
+            ->selectRaw('appointment_date, count(*) as appointments_count')
+            ->groupBy('appointment_date')
+            ->pluck('appointments_count', 'appointment_date');
+
+        $calendarMonths = [];
+        $calendarDays = [];
+
+        for ($monthDate = $firstMonthStart->copy(); $monthDate->lte($lastMonthStart); $monthDate->addMonth()) {
+            $monthStart = $monthDate->copy()->startOfMonth();
+            $monthEnd = $monthDate->copy()->endOfMonth();
+            $monthDays = [];
+
+            for ($offset = 0; $offset < $monthStart->dayOfWeekIso - 1; $offset++) {
+                $monthDays[] = null;
+            }
+
+            for ($date = $monthStart->copy(); $date->lte($monthEnd); $date->addDay()) {
+                $currentDate = $date->copy();
+                $daySchedules = $barbershop->schedules
+                    ->where('day_of_week', $currentDate->dayOfWeekIso)
+                    ->values();
+                $appointmentCount = (int) ($appointmentCountsByDate[$currentDate->format('Y-m-d')] ?? 0);
+
+                $day = [
+                    'index' => count($calendarDays),
+                    'date' => $currentDate,
+                    'iso_date' => $currentDate->format('Y-m-d'),
+                    'day_number' => $currentDate->format('d'),
+                    'weekday_label' => $weekdayLabels[$currentDate->dayOfWeekIso - 1],
+                    'has_schedule' => $daySchedules->isNotEmpty(),
+                    'is_past' => $currentDate->lt($today),
+                    'is_selected' => $currentDate->isSameDay($selectedDate),
+                    'is_selectable' => $daySchedules->isNotEmpty() && $currentDate->gte($today),
+                    'active_appointment_count' => $appointmentCount,
+                ];
+
+                $calendarDays[] = $day;
+                $monthDays[] = $day;
+            }
+
+            while (count($monthDays) % 7 !== 0) {
+                $monthDays[] = null;
+            }
+
+            $calendarMonths[] = [
+                'label' => $monthStart->format('F Y'),
+                'days' => $monthDays,
+            ];
+        }
+
+        $appointments = Appointments::where('barbershop_id', $barbershop->id)
+            ->where('appointment_date', $selectedDate->format('Y-m-d'))
+            ->whereIn('status', ['pending', 'accepted'])
+            ->with('client', 'service')
+            ->orderBy('start_time')
+            ->get();
+
+        $agendaSlots = [];
+        $slotInterval = $this->appointmentSelectionService->slotIntervalMinutes($barbershop);
+
+        foreach ($schedules as $scheduleSlot) {
+            $current = $selectedDate->copy()->setTimeFromTimeString($scheduleSlot->start_time);
+            $end = $selectedDate->copy()->setTimeFromTimeString($scheduleSlot->end_time);
+
+            while ($current->lt($end)) {
+                $slotEnd = $current->copy()->addMinutes($slotInterval);
+                if ($slotEnd->gt($end)) {
+                    $slotEnd = $end->copy();
+                }
+
+                $slotAppointments = $appointments->filter(function (Appointments $appointment) use ($selectedDate, $current, $slotEnd) {
+                    $appointmentStart = $selectedDate->copy()->setTimeFromTimeString(
+                        $appointment->start_time instanceof Carbon ? $appointment->start_time->format('H:i:s') : (string) $appointment->start_time
+                    );
+                    $appointmentEnd = $selectedDate->copy()->setTimeFromTimeString(
+                        $appointment->end_time instanceof Carbon ? $appointment->end_time->format('H:i:s') : (string) $appointment->end_time
+                    );
+
+                    return $appointmentStart->lt($slotEnd) && $appointmentEnd->gt($current);
+                })->values();
+
+                $agendaSlots[] = [
+                    'start' => $current->copy(),
+                    'end' => $slotEnd->copy(),
+                    'appointments' => $slotAppointments,
+                    'is_busy' => $slotAppointments->isNotEmpty(),
+                ];
+
+                $current = $slotEnd;
+            }
+        }
+
+        $initialVisibleMonthIndex = $selectedDate->isSameMonth($today) ? 0 : 1;
+
+        return view('appointments.agenda', compact(
+            'barbershop',
+            'selectedDate',
+            'schedule',
+            'schedules',
+            'appointments',
+            'agendaSlots',
+            'calendarMonths',
+            'initialVisibleMonthIndex',
+        ));
+    }
+
     public function updateStatus(Request $request, Appointments $appointment)
     {
         $barbershop = Auth::user()->barbershop;
@@ -225,9 +382,18 @@ class AppointmentController extends Controller
 
         $validated = $request->validate([
             'status' => 'required|in:accepted,rejected',
+            'rejection_reason' => 'nullable|string|max:300',
+            'barber_comment' => 'nullable|string|max:300',
         ]);
+        $barberComment = $validated['barber_comment'] ?? $validated['rejection_reason'] ?? null;
 
-        $appointment->update(['status' => $validated['status']]);
+        $appointment->update([
+            'status' => $validated['status'],
+            'barber_comment' => $barberComment,
+            'rejection_reason' => $validated['status'] === 'rejected'
+                ? $barberComment
+                : null,
+        ]);
 
         return redirect()->back()->with('success', 'Estado de la cita actualizado.');
     }

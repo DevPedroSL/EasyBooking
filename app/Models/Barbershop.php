@@ -17,6 +17,7 @@ class Barbershop extends Model
         'Description',
         'address',
         'phone',
+        'slot_interval_minutes',
         'visibility',
         'image_path',
         'image_paths',
@@ -24,6 +25,7 @@ class Barbershop extends Model
 
     protected $casts = [
         'image_paths' => 'array',
+        'slot_interval_minutes' => 'integer',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];

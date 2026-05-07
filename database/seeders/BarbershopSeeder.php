@@ -3,6 +3,9 @@
 namespace Database\Seeders;
 
 use App\Models\Barbershop;
+use App\Models\Schedules;
+use App\Models\Services;
+use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -15,141 +18,70 @@ class BarbershopSeeder extends Seeder
      */
     public function run(): void
     {
-        // Get the specific barbers
-        $barber = \App\Models\User::where('email', 'barber@example.com')->first();
-        $javier = \App\Models\User::where('email', 'javier@example.com')->first();
-        $antonio = \App\Models\User::where('email', 'antonio@example.com')->first();
+        $this->seedPrimaryBarbershop();
 
-        // Create specific barbershops
-        $barbershop1 = \App\Models\Barbershop::updateOrCreate([
-            'name' => 'Barbería 1',
+        $barbershopsToCreate = max(0, 20 - Barbershop::count());
+
+        if ($barbershopsToCreate > 0) {
+            Barbershop::factory()->count($barbershopsToCreate)->create();
+        }
+    }
+
+    private function seedPrimaryBarbershop(): void
+    {
+        $barber = User::where('email', 'barber@example.com')->first();
+
+        if (! $barber) {
+            return;
+        }
+
+        $barbershop = Barbershop::updateOrCreate([
+            'name' => 'Barberia 1',
         ], [
             'barber_id' => $barber->id,
             'Description' => 'Cortes buenos',
             'address' => 'Calle 5, Madrid',
-            'phone' => '612 345 678',
+            'phone' => '612345678',
+            'slot_interval_minutes' => 60,
             'visibility' => 'public',
         ]);
 
-        // Create services for this barbershop
-        \App\Models\Services::updateOrCreate([
-            'barbershop_id' => $barbershop1->id,
-            'name' => 'Corte',
-        ], [
-            'description' => 'Corte de pelo',
-            'duration' => 30,
-            'price' => 15.00,
-            'visibility' => 'public',
-        ]);
+        $services = [
+            [
+                'name' => 'Corte',
+                'description' => 'Corte de pelo clasico.',
+                'duration' => 30,
+                'price' => 15.00,
+            ],
+            [
+                'name' => 'Rulos',
+                'description' => 'Rulos permanentes.',
+                'duration' => 60,
+                'price' => 25.00,
+            ],
+            [
+                'name' => 'Tinte',
+                'description' => 'Aplicacion de tinte capilar.',
+                'duration' => 60,
+                'price' => 35.00,
+            ],
+        ];
 
-        \App\Models\Services::updateOrCreate([
-            'barbershop_id' => $barbershop1->id,
-            'name' => 'Rulos',
-        ], [
-            'description' => 'Rulos permantentes',
-            'duration' => 60,
-            'price' => 25.00,
-            'visibility' => 'public',
-        ]);
-
-        \App\Models\Services::updateOrCreate([
-            'barbershop_id' => $barbershop1->id,
-            'name' => 'Tinte',
-        ], [
-            'description' => 'Tinte',
-            'duration' => 60,
-            'price' => 35.00,
-            'visibility' => 'public',
-        ]);
-
-        // Create schedules for barbershop1 (Mon-Fri 9AM-9PM)
-        for ($day = 1; $day <= 5; $day++) {
-            \App\Models\Schedules::updateOrCreate([
-                'barbershop_id' => $barbershop1->id,
-                'day_of_week' => $day,
+        foreach ($services as $service) {
+            Services::updateOrCreate([
+                'barbershop_id' => $barbershop->id,
+                'name' => $service['name'],
             ], [
-                'start_time' => '09:00',
-                'end_time' => '21:00',
+                'description' => $service['description'],
+                'duration' => $service['duration'],
+                'price' => $service['price'],
+                'visibility' => 'public',
             ]);
         }
 
-        $barbershop2 = \App\Models\Barbershop::updateOrCreate([
-            'name' => 'Barbería 2',
-        ], [
-            'barber_id' => $javier->id,
-            'Description' => 'Cortes muy buenos',
-            'address' => 'Calle 10, Barcelona',
-            'phone' => '634 987 321',
-            'visibility' => 'public',
-        ]);
-
-        // Create services for this barbershop
-        \App\Models\Services::updateOrCreate([
-            'barbershop_id' => $barbershop2->id,
-            'name' => 'Corte',
-        ], [
-            'description' => 'Corte de pelo',
-            'duration' => 30,
-            'price' => 15.00,
-            'visibility' => 'public',
-        ]);
-
-        \App\Models\Services::updateOrCreate([
-            'barbershop_id' => $barbershop2->id,
-            'name' => 'Tinte',
-        ], [
-            'description' => 'Tinte',
-            'duration' => 60,
-            'price' => 35.00,
-            'visibility' => 'public',
-        ]);
-
-        // Create schedules for barbershop2
-        for ($day = 1; $day <= 5; $day++) {
-            \App\Models\Schedules::updateOrCreate([
-                'barbershop_id' => $barbershop2->id,
-                'day_of_week' => $day,
-            ], [
-                'start_time' => '09:00',
-                'end_time' => '21:00',
-            ]);
-        }
-
-        $barbershop3 = \App\Models\Barbershop::updateOrCreate([
-            'name' => 'Barbería 3',
-        ], [
-            'barber_id' => $antonio->id,
-            'Description' => 'Cortes de calidad',
-            'address' => 'Calle 7, Jumilla, Murcia',
-            'phone' => '655 112 233',
-            'visibility' => 'public',
-        ]);
-
-        // Create services for this barbershop
-        \App\Models\Services::updateOrCreate([
-            'barbershop_id' => $barbershop3->id,
-            'name' => 'Corte',
-        ], [
-            'description' => 'Corte de pelo',
-            'duration' => 30,
-            'price' => 15.00,
-            'visibility' => 'public',
-        ]);
-
-        \App\Models\Services::updateOrCreate([
-            'barbershop_id' => $barbershop3->id,
-            'name' => 'Tinte',
-        ], [
-            'description' => 'Tinte',
-            'duration' => 60,
-            'price' => 35.00,
-            'visibility' => 'public',
-        ]);
-
-        // Create schedules for barbershop3
-        for ($day = 1; $day <= 5; $day++) {
-            \App\Models\Schedules::updateOrCreate([
-                'barbershop_id' => $barbershop3->id,
+        foreach ([1, 2, 3, 4, 5] as $day) {
+            Schedules::updateOrCreate([
+                'barbershop_id' => $barbershop->id,
                 'day_of_week' => $day,
             ], [
                 'start_time' => '09:00',

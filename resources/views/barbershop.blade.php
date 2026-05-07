@@ -130,9 +130,15 @@
   <div class="shop-hero mb-8">
     <div class="shop-detail-hero-layout">
       <div class="shop-detail-hero-copy">
-        <h1 class="text-4xl font-black">{{ $barbershop->name }}</h1>
-        <p class="mt-3 max-w-2xl text-violet-50">{{ \Illuminate\Support\Str::limit($barbershop->Description, 50) }}</p>
-        <p class="mt-2 text-sm font-semibold text-violet-200">{{ $barbershop->address }}</p>
+        <h1 class="mb-6 text-4xl font-black">{{ $barbershop->name }}</h1>
+        <div class="flex items-center gap-2 text-sm font-semibold">
+          <x-heroicon-s-map-pin class="h-4 w-4" />
+          <p class="font-semibold">{{ $barbershop->address }}</p>
+        </div>
+        <div class="mt-2 flex items-center gap-2 text-sm font-semibold">
+          <x-heroicon-s-phone class="h-4 w-4" />
+          <p class="font-semibold">{{ $barbershop->phone }}</p>
+        </div>
 
         @if($barbershop->barber)
           <div class="mt-6 inline-flex items-center gap-3 rounded-2xl bg-white/10 px-4 py-3 backdrop-blur-sm">

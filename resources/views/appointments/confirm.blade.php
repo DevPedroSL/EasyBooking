@@ -16,21 +16,15 @@
       <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
         <p class="text-sm font-bold text-gray-500 uppercase">Hora reservada</p>
         <p class="mt-2 text-2xl font-black text-gray-900">{{ $startTime->format('H:i') }}</p>
-        <p class="text-sm text-gray-600">{{ $startTime->format('d/m/Y') }} · hasta las {{ $endTime->format('H:i') }}</p>
+        <p class="text-sm text-gray-600">{{ $startTime->format('d/m/Y') }}</p>
       </div>
 
       <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
         <p class="text-sm font-bold text-gray-500 uppercase">Servicio</p>
         <div class="mt-2 flex items-center gap-4">
-          @if($service->image_url)
-            <div class="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-sm">
-              <img src="{{ $service->image_url }}" alt="{{ $service->name }}" class="h-full w-full object-cover">
-            </div>
-          @endif
-
           <div>
             <p class="text-2xl font-black text-gray-900">{{ $service->name }}</p>
-            <p class="text-sm text-gray-600">{{ $service->duration }} min</p>
+            <p class="text-sm text-gray-600">{{ $service->duration }} min &bull; {{ $service->price }} €</p>
           </div>
         </div>
       </div>
@@ -57,7 +51,7 @@
       </div>
 
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <a href="{{ route('appointments.create', ['barbershop' => $barbershop, 'service' => $service]) }}" class="text-sm font-bold text-violet-900 hover:text-violet-700">
+        <a href="{{ route('appointments.create', ['barbershop' => $barbershop, 'service' => $service, 'datetime' => $datetime]) }}" class="text-sm font-bold text-violet-900 hover:text-violet-700">
           Cambiar horario
         </a>
         <button type="submit" class="eb-button px-6 py-3">

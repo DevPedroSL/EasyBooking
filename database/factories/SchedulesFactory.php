@@ -20,9 +20,21 @@ class SchedulesFactory extends Factory
     {
         return [
             'barbershop_id' => Barbershop::inRandomOrder()->first()->id ?? Barbershop::factory()->create()->id,
-            'day_of_week' => fake()->numberBetween(1, 7), // 1=Monday, 7=Sunday
-            'start_time' => fake()->time('H:i'),
-            'end_time' => fake()->time('H:i'),
+            'day_of_week' => fake()->numberBetween(1, 6),
+            'start_time' => '10:00',
+            'end_time' => '20:00',
         ];
+    }
+
+    public function weekday(int $day): static
+    {
+        $startHour = fake()->randomElement(['09:00', '10:00']);
+        $endHour = $startHour === '09:00' ? '21:00' : '20:00';
+
+        return $this->state(fn (array $attributes) => [
+            'day_of_week' => $day,
+            'start_time' => $startHour,
+            'end_time' => $endHour,
+        ]);
     }
 }

@@ -71,21 +71,7 @@
                             </span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <a href="{{ route('appointments.show', $appointment) }}" class="text-violet-700 hover:text-violet-900 mr-2">Ver detalles</a>
-                            @if($appointment->status === 'pending')
-                            <form method="POST" action="{{ route('appointments.updateStatus', $appointment) }}" class="inline">
-                                @csrf
-                                @method('PATCH')
-                                <input type="hidden" name="status" value="accepted">
-                                <button type="submit" class="text-violet-700 hover:text-violet-900 mr-2">Aceptar</button>
-                            </form>
-                            <form method="POST" action="{{ route('appointments.updateStatus', $appointment) }}" class="inline">
-                                @csrf
-                                @method('PATCH')
-                                <input type="hidden" name="status" value="rejected">
-                                <button type="submit" class="text-red-600 hover:text-red-900">Rechazar</button>
-                            </form>
-                            @endif
+                            <a href="{{ route('appointments.show', $appointment) }}" class="text-violet-700 hover:text-violet-900">Ver detalles</a>
                         </td>
                     </tr>
                     @empty

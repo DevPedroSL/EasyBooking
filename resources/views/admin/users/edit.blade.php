@@ -13,6 +13,12 @@
     </div>
 
     <div class="eb-panel p-8">
+        @if(session('error'))
+            <div class="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800">
+                {{ session('error') }}
+            </div>
+        @endif
+
         <form action="{{ route('admin.users.update', $user) }}" method="POST" class="space-y-6">
             @csrf
             @method('PATCH')
@@ -51,6 +57,20 @@
                     @endforeach
                 </select>
                 @error('role')
+                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <div>
+                <label for="is_banned" class="mb-2 block text-sm font-bold text-gray-900">Estado de la cuenta</label>
+                <select id="is_banned" name="is_banned" class="w-full rounded-lg border border-gray-300 px-4 py-3 shadow-sm focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-200">
+                    <option value="0" @selected((string) old('is_banned', (int) $user->is_banned) === '0')>Activa</option>
+                    <option value="1" @selected((string) old('is_banned', (int) $user->is_banned) === '1')>Deshabilitada</option>
+                </select>
+                <p class="mt-2 text-sm text-gray-600">
+                    Si deshabilitas la cuenta, el usuario no podrá iniciar sesión hasta que vuelva a ser activado.
+                </p>
+                @error('is_banned')
                     <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                 @enderror
             </div>

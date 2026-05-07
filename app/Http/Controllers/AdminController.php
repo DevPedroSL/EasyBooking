@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Barbershop;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class AdminController extends Controller
 {
@@ -135,11 +137,58 @@ class AdminController extends Controller
             'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
             'phone' => 'required|string|max:20',
             'role' => 'required|in:admin,barber,customer',
+            'is_banned' => 'nullable|boolean',
         ]);
 
-        $user->update($validated);
+        $isBanned = $request->boolean('is_banned');
+
+        if ($user->id === auth()->id() && $isBanned) {
+            return redirect()->route('admin.users.edit', $user)->with('error', 'No puedes deshabilitar tu propia cuenta.');
+        }
+
+        $wasBanned = $user->is_banned;
+
+        $user->update([
+            ...$validated,
+            'is_banned' => $isBanned,
+        ]);
+
+        if (! $wasBanned && $isBanned) {
+            $this->disableUserAccess($user);
+        }
 
         return redirect()->route('admin.users.index')->with('success', 'Usuario actualizado correctamente.');
+    }
+
+    public function usersBan(User $user)
+    {
+        $this->ensureAdmin();
+
+        if ($user->id === auth()->id()) {
+            return redirect()->route('admin.users.index')->with('error', 'No puedes deshabilitar tu propia cuenta.');
+        }
+
+        if ($user->is_banned) {
+            return redirect()->route('admin.users.index')->with('success', 'La cuenta ya estaba deshabilitada.');
+        }
+
+        $user->forceFill(['is_banned' => true])->save();
+        $this->disableUserAccess($user);
+
+        return redirect()->route('admin.users.index')->with('success', 'Cuenta deshabilitada correctamente.');
+    }
+
+    public function usersUnban(User $user)
+    {
+        $this->ensureAdmin();
+
+        if (! $user->is_banned) {
+            return redirect()->route('admin.users.index')->with('success', 'La cuenta ya estaba activa.');
+        }
+
+        $user->forceFill(['is_banned' => false])->save();
+
+        return redirect()->route('admin.users.index')->with('success', 'Cuenta reactivada correctamente.');
     }
 
     public function usersDestroy(User $user)
@@ -199,5 +248,14 @@ class AdminController extends Controller
                 Storage::disk('public')->delete($path);
             }
         }
+    }
+
+    private function disableUserAccess(User $user): void
+    {
+        $user->forceFill([
+            'remember_token' => Str::random(60),
+        ])->save();
+
+        DB::table('sessions')->where('user_id', $user->id)->delete();
     }
 }

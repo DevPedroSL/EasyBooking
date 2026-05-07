@@ -18,12 +18,14 @@
         <nav class="app-nav sticky top-0 z-50">
   <div class="w-full px-4 sm:px-6 lg:px-8">
     <div class="flex justify-between h-16 items-center">
+      <a href="{{ route('inicio') }}">
       <div class="flex items-center gap-2">
         <div class="brand-mark p-2">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.121 14.121L19 19m-7-7l7-7m-7 7l-2.879 2.879M12 12L9.121 9.121m0 5.758a3 3 0 11-4.243 4.243 3 3 0 014.243-4.243z"></path></svg>
         </div>
         <span class="brand-name text-xl font-black tracking-tight">Easy<span>Booking</span></span>
       </div>
+      </a>
 
       <div class="hidden md:flex items-center space-x-6">
         <a href="{{ route('inicio') }}" class="text-sm font-medium">Explorar</a>
@@ -41,6 +43,7 @@
             <a href="{{ route('barbershops.editMy') }}" class="text-sm font-medium">Gestionar mi barbería</a>
           @endif
           @if(auth()->user()->barbershop)
+            <a href="{{ route('appointments.agenda') }}" class="text-sm font-medium">Agenda</a>
             <a href="{{ route('appointments.barber') }}" class="nav-action inline-block px-3 py-1 text-sm font-medium transition-colors">Gestionar Citas</a>
           @endif
           @if(auth()->user()->role === 'admin')
@@ -77,6 +80,17 @@
         <main class="app-main">
           @yield('content')
         </main>
+
+        <footer class="app-footer">
+          <div class="app-footer__inner">
+            <p class="app-footer__brand">EasyBooking</p>
+
+            <div class="app-footer__actions">
+              <a href="{{ route('contact') }}" class="app-footer__button">Contáctanos</a>
+              <a href="{{ route('legal') }}" class="app-footer__button">Privacidad, términos y uso</a>
+            </div>
+          </div>
+        </footer>
 
         <div id="confirm-modal" class="fixed inset-0 z-[100] hidden" aria-hidden="true">
           <div class="absolute inset-0 bg-slate-950/50" data-confirm-close></div>
@@ -131,6 +145,8 @@
           const cancelButton = document.getElementById('confirm-modal-cancel');
           const closeTriggers = modal ? modal.querySelectorAll('[data-confirm-close]') : [];
           let activeForm = null;
+          let activeSubmitter = null;
+          let activeConfirmSource = null;
 
           if (!modal || !title || !message || !confirmButton || !cancelButton) {
             return;
@@ -141,13 +157,17 @@
             modal.setAttribute('aria-hidden', 'true');
             document.body.classList.remove('overflow-hidden');
             activeForm = null;
+            activeSubmitter = null;
+            activeConfirmSource = null;
           };
 
-          const openModal = (form) => {
+          const openModal = (form, confirmSource, submitter = null) => {
             activeForm = form;
-            title.textContent = form.dataset.confirmTitle || 'Antes de continuar';
-            message.textContent = form.dataset.confirmMessage || 'Esta accion no se puede deshacer.';
-            confirmButton.textContent = form.dataset.confirmButton || 'Confirmar';
+            activeSubmitter = submitter;
+            activeConfirmSource = confirmSource;
+            title.textContent = confirmSource.dataset.confirmTitle || 'Antes de continuar';
+            message.textContent = confirmSource.dataset.confirmMessage || 'Esta accion no se puede deshacer.';
+            confirmButton.textContent = confirmSource.dataset.confirmButton || 'Confirmar';
             modal.classList.remove('hidden');
             modal.setAttribute('aria-hidden', 'false');
             document.body.classList.add('overflow-hidden');
@@ -156,7 +176,7 @@
           document.addEventListener('submit', (event) => {
             const form = event.target;
 
-            if (!(form instanceof HTMLFormElement) || !form.dataset.confirmMessage) {
+            if (!(form instanceof HTMLFormElement)) {
               return;
             }
 
@@ -165,8 +185,17 @@
               return;
             }
 
+            const submitter = event.submitter instanceof HTMLElement ? event.submitter : null;
+            const confirmSource = submitter && submitter.dataset.confirmMessage
+              ? submitter
+              : (form.dataset.confirmMessage ? form : null);
+
+            if (!confirmSource) {
+              return;
+            }
+
             event.preventDefault();
-            openModal(form);
+            openModal(form, confirmSource, submitter);
           });
 
           confirmButton.addEventListener('click', () => {
@@ -176,7 +205,19 @@
             }
 
             activeForm.dataset.confirmed = 'true';
-            activeForm.submit();
+            if (activeSubmitter && typeof activeForm.requestSubmit === 'function') {
+              activeForm.requestSubmit(activeSubmitter);
+            } else {
+              if (activeSubmitter && activeSubmitter.name) {
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = activeSubmitter.name;
+                hiddenInput.value = activeSubmitter.value;
+                activeForm.appendChild(hiddenInput);
+              }
+
+              activeForm.submit();
+            }
             closeModal();
           });
 

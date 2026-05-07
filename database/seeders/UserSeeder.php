@@ -16,7 +16,6 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create an admin user
         User::updateOrCreate([
             'email' => 'admin@example.com',
         ], [
@@ -27,38 +26,6 @@ class UserSeeder extends Seeder
             'email_verified_at' => now(),
         ]);
 
-        // Create specific barbers
-        User::updateOrCreate([
-            'email' => 'barber@example.com',
-        ], [
-            'name' => 'Barber User',
-            'phone' => '600000002',
-            'password' => Hash::make('123'),
-            'role' => 'barber',
-            'email_verified_at' => now(),
-        ]);
-
-        User::updateOrCreate([
-            'email' => 'javier@example.com',
-        ], [
-            'name' => 'Javier López',
-            'phone' => '600000003',
-            'password' => Hash::make('123'),
-            'role' => 'barber',
-            'email_verified_at' => now(),
-        ]);
-
-        User::updateOrCreate([
-            'email' => 'antonio@example.com',
-        ], [
-            'name' => 'Antonio García',
-            'phone' => '600000004',
-            'password' => Hash::make('123'),
-            'role' => 'barber',
-            'email_verified_at' => now(),
-        ]);
-
-        // Create a specific customer
         User::updateOrCreate([
             'email' => 'customer@example.com',
         ], [
@@ -69,11 +36,20 @@ class UserSeeder extends Seeder
             'email_verified_at' => now(),
         ]);
 
-        // Create some customers
+        User::updateOrCreate([
+            'email' => 'barber@example.com',
+        ], [
+            'name' => 'Barber User',
+            'phone' => '600000002',
+            'password' => Hash::make('123'),
+            'role' => 'barber',
+            'email_verified_at' => now(),
+        ]);
+
         $customersToCreate = max(0, 10 - User::where('role', 'customer')->count());
 
         if ($customersToCreate > 0) {
-            User::factory($customersToCreate)->create(['role' => 'customer']);
+            User::factory($customersToCreate)->customer()->create();
         }
     }
 }

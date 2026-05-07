@@ -107,12 +107,28 @@
                 @method('PUT')
 
                 <div class="grid gap-5 md:grid-cols-2">
+                    <div class="md:col-span-2">
+                        <label for="current_password" class="block text-sm font-bold text-gray-900 mb-2">Contraseña actual</label>
+                        <input
+                            id="current_password"
+                            name="current_password"
+                            type="password"
+                            required
+                            autocomplete="current-password"
+                            class="w-full rounded-lg border border-gray-300 px-4 py-3 shadow-sm focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-200"
+                        >
+                        @if ($errors->updatePassword->has('current_password'))
+                            <p class="mt-2 text-sm text-red-600">{{ $errors->updatePassword->first('current_password') }}</p>
+                        @endif
+                    </div>
+
                     <div>
                         <label for="password" class="block text-sm font-bold text-gray-900 mb-2">Nueva contraseña</label>
                         <input
                             id="password"
                             name="password"
                             type="password"
+                            required
                             autocomplete="new-password"
                             class="w-full rounded-lg border border-gray-300 px-4 py-3 shadow-sm focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-200"
                         >
@@ -127,9 +143,13 @@
                             id="password_confirmation"
                             name="password_confirmation"
                             type="password"
+                            required
                             autocomplete="new-password"
                             class="w-full rounded-lg border border-gray-300 px-4 py-3 shadow-sm focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-200"
                         >
+                        @if ($errors->updatePassword->has('password_confirmation'))
+                            <p class="mt-2 text-sm text-red-600">{{ $errors->updatePassword->first('password_confirmation') }}</p>
+                        @endif
                     </div>
                 </div>
 

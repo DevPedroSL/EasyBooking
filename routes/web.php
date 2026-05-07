@@ -28,6 +28,9 @@ Route::get('/inicio', function () {
     return redirect()->route('inicio');
 });
 
+Route::view('/contacto', 'contact')->name('contact');
+Route::view('/legal', 'legal')->name('legal');
+
 Route::get('/barbershops/{barbershop}/image', [BarbershopController::class, 'image'])->name('barbershops.image');
 Route::get('/barbershops/{barbershop}/images/{index}', [BarbershopController::class, 'galleryImage'])->name('barbershops.images.show');
 Route::get('/services/{service}/image', [BarbershopController::class, 'serviceImage'])->name('services.image');
@@ -47,6 +50,7 @@ Route::get('/barbershop/{barbershop}/appointments/confirm', [App\Http\Controller
 Route::post('/barbershop/{barbershop}/appointments', [App\Http\Controllers\AppointmentController::class, 'store'])->name('appointments.store')->middleware('auth');
 Route::get('/my-appointments', [App\Http\Controllers\AppointmentController::class, 'my'])->name('appointments.my')->middleware('auth');
 Route::get('/barber/appointments', [App\Http\Controllers\AppointmentController::class, 'barberAppointments'])->name('appointments.barber')->middleware('auth');
+Route::get('/barber/agenda', [App\Http\Controllers\AppointmentController::class, 'barberAgenda'])->name('appointments.agenda')->middleware('auth');
 Route::get('/appointments/{appointment}', [App\Http\Controllers\AppointmentController::class, 'show'])->name('appointments.show')->middleware('auth');
 Route::patch('/appointments/{appointment}/cancel', [App\Http\Controllers\AppointmentController::class, 'cancel'])->name('appointments.cancel')->middleware('auth');
 Route::patch('/appointments/{appointment}/status', [App\Http\Controllers\AppointmentController::class, 'updateStatus'])->name('appointments.updateStatus')->middleware('auth');
@@ -87,6 +91,8 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::get('/users', [AdminController::class, 'usersIndex'])->name('users.index');
     Route::get('/users/{user}/edit', [AdminController::class, 'usersEdit'])->name('users.edit');
     Route::patch('/users/{user}', [AdminController::class, 'usersUpdate'])->name('users.update');
+    Route::patch('/users/{user}/ban', [AdminController::class, 'usersBan'])->name('users.ban');
+    Route::patch('/users/{user}/unban', [AdminController::class, 'usersUnban'])->name('users.unban');
     Route::delete('/users/{user}', [AdminController::class, 'usersDestroy'])->name('users.destroy');
 });
 

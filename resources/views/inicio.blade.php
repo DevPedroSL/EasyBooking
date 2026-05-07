@@ -7,7 +7,6 @@
     <div class="page-heading">
         <div>
             <h1 class="page-title">Barberías Disponibles</h1>
-            <p class="page-subtitle">Busca por nombre o por dirección.</p>
         </div>
     </div>
 
@@ -48,32 +47,48 @@
         </form>
     </div>
 
-    <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        @forelse($barbershops as $barbershop)
-            <div class="eb-card transition">
-                @if($barbershop->image_url)
-                    <div class="mb-5 flex h-52 w-full items-center justify-center rounded-2xl bg-white p-4 shadow-sm">
-                        <img src="{{ $barbershop->image_url }}" alt="{{ $barbershop->name }}" class="h-full w-full object-contain">
+    <div x-data="{ visibleCount: 9 }">
+        <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            @forelse($barbershops as $barbershop)
+                <div x-cloak x-show="visibleCount > {{ $loop->index }}" class="eb-card transition">
+                    @if($barbershop->image_url)
+                        <div class="mb-5 flex h-52 w-full items-center justify-center rounded-2xl bg-white p-4 shadow-sm">
+                            <img src="{{ $barbershop->image_url }}" alt="{{ $barbershop->name }}" class="h-full w-full object-contain">
+                        </div>
+                    @else
+                        <div class="mb-5 flex h-52 w-full items-center justify-center rounded-2xl bg-violet-100 text-center">
+                            <span class="px-6 text-lg font-black text-violet-800">{{ $barbershop->name }}</span>
+                        </div>
+                    @endif
+                    <div class="mb-5">
+                        <h2 class="text-xl font-black text-gray-900">{{ $barbershop->name }}</h2>
                     </div>
-                @else
-                    <div class="mb-5 flex h-52 w-full items-center justify-center rounded-2xl bg-violet-100 text-center">
-                        <span class="px-6 text-lg font-black text-violet-800">{{ $barbershop->name }}</span>
+                    <div class="mb-5 space-y-1 text-sm font-semibold text-gray-700">
+                        <p>{{ $barbershop->address }}</p>
                     </div>
-                @endif
-                <div class="mb-5">
-                    <h2 class="text-xl font-black text-gray-900">{{ $barbershop->name }}</h2>
+                    <a href="{{ route('barbershop', $barbershop->name) }}" class="eb-button">
+                        Ver Servicios
+                    </a>
                 </div>
-                <p class="mb-5 min-h-16 text-gray-600">{{ \Illuminate\Support\Str::limit($barbershop->Description ?? 'Servicio de barbería profesional', 50) }}</p>
-                <p class="mb-5 text-sm font-semibold text-gray-700">{{ $barbershop->address }}</p>
-                <a href="{{ route('barbershop', $barbershop->name) }}" class="eb-button">
-                    Ver Servicios
-                </a>
+            @empty
+                <div class="eb-panel p-8 text-center text-gray-600 md:col-span-2 lg:col-span-3">
+                    No se han encontrado barberías con esos filtros.
+                </div>
+            @endforelse
+        </div>
+
+        @if($barbershops->count() > 9)
+            <div class="mt-8 flex justify-center">
+                <button
+                    type="button"
+                    x-show="visibleCount < {{ $barbershops->count() }}"
+                    @click="visibleCount += 9"
+                    class="eb-button px-6 py-3"
+                >
+                    Mostrar más
+                </button>
             </div>
-        @empty
-            <div class="eb-panel p-8 text-center text-gray-600 md:col-span-2 lg:col-span-3">
-                No se han encontrado barberías con esos filtros.
-            </div>
-        @endforelse
+        @endif
     </div>
 </div>
 @endsection

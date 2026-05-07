@@ -13,7 +13,23 @@
 
   <div
     class="eb-panel booking-calendar-panel overflow-hidden p-8"
-    x-data="{ visibleMonth: @js($initialVisibleMonthIndex), selectedDay: @js($initialSelectedDayIndex), selectedDatetime: @js($preselectedDatetime ?? '') }"
+    x-data="{
+      visibleMonth: @js($initialVisibleMonthIndex),
+      selectedDay: @js($initialSelectedDayIndex),
+      selectedDatetime: @js($preselectedDatetime ?? ''),
+      selectDay(monthIndex, dayIndex, isoDate) {
+        this.visibleMonth = monthIndex;
+        this.selectedDay = dayIndex;
+
+        if (!this.selectedDatetime || !this.selectedDatetime.startsWith(isoDate)) {
+          this.selectedDatetime = '';
+        }
+
+        this.$nextTick(() => {
+          this.$refs.bookingSlots?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      }
+    }"
   >
     <form action="{{ route('appointments.confirm', $barbershop) }}" method="GET">
       <input type="hidden" name="barbershop_id" value="{{ $barbershop->id }}">
@@ -66,11 +82,15 @@
                 @if($day === null)
                   <div class="booking-day-spacer" aria-hidden="true"></div>
                 @else
+                  @php($isBookableDay = $day['available_slot_count'] > 0)
                   <button
                     type="button"
-                    class="booking-day-button"
-                    :class="{ 'is-selected': selectedDay === {{ $day['index'] }}, 'is-empty': {{ empty($day['slots']) ? 'true' : 'false' }}, 'is-past': {{ $day['is_past'] ? 'true' : 'false' }} }"
-                    @click="visibleMonth = {{ $loop->parent->index }}; selectedDay = {{ $day['index'] }}; if (!selectedDatetime || !selectedDatetime.startsWith('{{ $day['iso_date'] }}')) { selectedDatetime = ''; }"
+                    class="booking-day-button {{ $isBookableDay ? '' : 'is-unavailable' }}"
+                    data-date="{{ $day['iso_date'] }}"
+                    aria-disabled="{{ $isBookableDay ? 'false' : 'true' }}"
+                    :class="{ 'is-selected': selectedDay === {{ $day['index'] }}, 'is-empty': {{ $isBookableDay ? 'false' : 'true' }}, 'is-past': {{ $day['is_past'] ? 'true' : 'false' }} }"
+                    @click="selectDay({{ $loop->parent->index }}, {{ $day['index'] }}, '{{ $day['iso_date'] }}')"
+                    @disabled(!$isBookableDay)
                   >
                     <span class="booking-day-week">{{ $day['weekday_label'] }}</span>
                     <span class="booking-day-number">{{ $day['day_number'] }}</span>
@@ -78,9 +98,9 @@
                       @if($day['is_past'])
                         Pasado
                       @elseif($day['available_slot_count'] === 0)
-                        Sin huecos
+                        Sin citas
                       @else
-                        {{ $day['available_slot_count'] }} horas
+                        {{ $day['available_slot_count'] }} huecos disponibles
                       @endif
                     </span>
                   </button>
@@ -92,7 +112,7 @@
         </div>
       </div>
 
-      <div class="booking-slots-panel">
+      <div class="booking-slots-panel" x-ref="bookingSlots">
         @foreach($days as $day)
           <section x-cloak x-show="selectedDay === {{ $day['index'] }}" class="booking-slots-day">
             <div class="booking-slots-head">

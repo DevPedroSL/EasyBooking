@@ -18,6 +18,7 @@ class AppointmentSelectionService
     {
         $start = $date->copy()->setTimeFromTimeString($schedule->start_time);
         $end = $date->copy()->setTimeFromTimeString($schedule->end_time);
+        $slotInterval = $this->slotIntervalMinutes($barbershop);
 
         $slots = [];
         $existingAppointments = Appointments::where('barbershop_id', $barbershop->id)
@@ -27,9 +28,8 @@ class AppointmentSelectionService
 
         $current = $start->copy();
         if ($date->isToday() && $current->lessThan(now())) {
-            $current = now()->copy()->startOfHour();
-            if ($current->lessThan(now())) {
-                $current->addHour();
+            while ($current->lessThan(now())) {
+                $current->addMinutes($slotInterval);
             }
         }
 
@@ -56,7 +56,7 @@ class AppointmentSelectionService
                 'available' => $available,
             ];
 
-            $current->addHour();
+            $current->addMinutes($slotInterval);
         }
 
         return $slots;
@@ -65,6 +65,25 @@ class AppointmentSelectionService
     public function getAvailableSlotsForService(Barbershop $barbershop, Carbon $date, $schedule, Services $service): array
     {
         return collect($this->getSlotsForService($barbershop, $date, $schedule, $service))
+            ->filter(fn (array $slot) => $slot['available'])
+            ->pluck('time')
+            ->all();
+    }
+
+    public function getSlotsForServiceInSchedules(Barbershop $barbershop, Carbon $date, iterable $schedules, Services $service): array
+    {
+        return collect($schedules)
+            ->sortBy('start_time')
+            ->flatMap(fn ($schedule) => $this->getSlotsForService($barbershop, $date, $schedule, $service))
+            ->unique('time')
+            ->sortBy('time')
+            ->values()
+            ->all();
+    }
+
+    public function getAvailableSlotsForServiceInSchedules(Barbershop $barbershop, Carbon $date, iterable $schedules, Services $service): array
+    {
+        return collect($this->getSlotsForServiceInSchedules($barbershop, $date, $schedules, $service))
             ->filter(fn (array $slot) => $slot['available'])
             ->pluck('time')
             ->all();
@@ -127,17 +146,18 @@ class AppointmentSelectionService
             return false;
         }
 
-        $schedule = $barbershop->schedules
+        $schedules = $barbershop->schedules
             ->where('day_of_week', $startTime->dayOfWeekIso)
-            ->first();
+            ->sortBy('start_time')
+            ->values();
 
-        if (!$schedule) {
+        if ($schedules->isEmpty()) {
             return false;
         }
 
         return in_array(
             $startTime->format('H:i'),
-            $this->getAvailableSlotsForService($barbershop, $startTime->copy()->startOfDay(), $schedule, $service),
+            $this->getAvailableSlotsForServiceInSchedules($barbershop, $startTime->copy()->startOfDay(), $schedules, $service),
             true
         );
     }
@@ -150,5 +170,20 @@ class AppointmentSelectionService
             ->where('start_time', '<', $endTime->format('H:i:s'))
             ->where('end_time', '>', $startTime->format('H:i:s'))
             ->exists();
+    }
+
+    public function clientHasAppointmentOnDate(int $clientId, Carbon $date): bool
+    {
+        return Appointments::where('client_id', $clientId)
+            ->where('appointment_date', $date->format('Y-m-d'))
+            ->whereIn('status', self::BLOCKING_STATUSES)
+            ->exists();
+    }
+
+    public function slotIntervalMinutes(Barbershop $barbershop): int
+    {
+        $interval = (int) ($barbershop->slot_interval_minutes ?: 60);
+
+        return in_array($interval, [15, 30, 45, 60], true) ? $interval : 60;
     }
 }

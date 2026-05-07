@@ -17,6 +17,8 @@ class Appointments extends Model
         'end_time',
         'status',
         'client_comment',
+        'rejection_reason',
+        'barber_comment',
     ];
 
     protected $casts = [

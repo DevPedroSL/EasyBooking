@@ -24,6 +24,8 @@ class AppointmentsFactory extends Factory
         $barbershop = \App\Models\Barbershop::inRandomOrder()->first() ?? \App\Models\Barbershop::factory()->create();
         $service = \App\Models\Services::where('barbershop_id', $barbershop->id)->inRandomOrder()->first()
             ?? \App\Models\Services::factory()->create(['barbershop_id' => $barbershop->id]);
+        $status = fake()->randomElement(['pending', 'accepted', 'rejected', 'completed', 'cancelled']);
+        $barberComment = in_array($status, ['accepted', 'rejected'], true) ? fake()->optional()->text(80) : null;
 
         return [
             'client_id' => User::where('role', 'customer')->inRandomOrder()->first()->id ?? User::factory()->state(['role' => 'customer'])->create()->id,
@@ -33,7 +35,9 @@ class AppointmentsFactory extends Factory
             'start_time' => $start,
             'end_time' => $end,
             'client_comment' => fake()->optional()->text(50),
-            'status' => fake()->randomElement(['pending', 'accepted', 'rejected', 'completed', 'cancelled']),
+            'rejection_reason' => $status === 'rejected' ? $barberComment : null,
+            'barber_comment' => $barberComment,
+            'status' => $status,
         ];
     }
 }

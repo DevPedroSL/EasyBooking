@@ -25,6 +25,7 @@ class User extends Authenticatable
         'password',
         'avatar_path',
         'role',
+        'is_banned',
         'barbershop_id',
     ];
 
@@ -48,6 +49,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_banned' => 'boolean',
         ];
     }
 
@@ -75,19 +77,11 @@ class User extends Authenticatable
             return route('users.avatar', $this, false);
         }
 
-        $initials = collect(preg_split('/\s+/', trim($this->name)) ?: [])
-            ->filter()
-            ->take(2)
-            ->map(fn (string $part) => mb_strtoupper(mb_substr($part, 0, 1)))
-            ->implode('');
+        return asset('default-avatar.svg');
+    }
 
-        $svg = <<<SVG
-<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
-  <rect width="128" height="128" rx="28" fill="#ede9fe"/>
-  <text x="50%" y="50%" dominant-baseline="central" text-anchor="middle" font-family="Arial, sans-serif" font-size="44" font-weight="700" fill="#4c1d95">{$initials}</text>
-</svg>
-SVG;
-
-        return 'data:image/svg+xml;base64,' . base64_encode($svg);
+    public function isActive(): bool
+    {
+        return ! $this->is_banned;
     }
 }

@@ -180,6 +180,126 @@ class BarbershopManagementTest extends TestCase
         }
     }
 
+    public function test_booking_page_disables_days_without_available_slots(): void
+    {
+        Carbon::setTestNow('2026-05-04 09:00:00');
+
+        try {
+            [, $barbershop] = $this->createBarberWithBarbershop();
+            $barbershop->schedules()->delete();
+
+            $service = Services::factory()->create([
+                'barbershop_id' => $barbershop->id,
+                'duration' => 30,
+                'visibility' => 'public',
+            ]);
+
+            Schedules::factory()->create([
+                'barbershop_id' => $barbershop->id,
+                'day_of_week' => Carbon::create(2026, 5, 6)->dayOfWeekIso,
+                'start_time' => '10:00:00',
+                'end_time' => '11:00:00',
+            ]);
+
+            $response = $this->get(route('appointments.create', ['barbershop' => $barbershop, 'service' => $service]));
+
+            $content = $response->assertOk()->getContent();
+
+            $this->assertMatchesRegularExpression(
+                '/<button(?=[^>]*data-date="2026-05-05")(?=[^>]*\sdisabled(?:\s|>))[^>]*>/s',
+                $content
+            );
+            $this->assertDoesNotMatchRegularExpression(
+                '/<button(?=[^>]*data-date="2026-05-06")(?=[^>]*\sdisabled(?:\s|>))[^>]*>/s',
+                $content
+            );
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
+    public function test_same_day_booking_slots_start_on_the_next_available_hour(): void
+    {
+        Carbon::setTestNow('2026-05-04 18:35:00');
+
+        try {
+            [, $barbershop] = $this->createBarberWithBarbershop();
+            $barbershop->schedules()->delete();
+
+            $service = Services::factory()->create([
+                'barbershop_id' => $barbershop->id,
+                'duration' => 30,
+                'visibility' => 'public',
+            ]);
+
+            $schedule = Schedules::factory()->create([
+                'barbershop_id' => $barbershop->id,
+                'day_of_week' => Carbon::today()->dayOfWeekIso,
+                'start_time' => '17:00:00',
+                'end_time' => '21:00:00',
+            ]);
+
+            $slots = app(AppointmentSelectionService::class)
+                ->getAvailableSlotsForService($barbershop, Carbon::today(), $schedule, $service);
+
+            $this->assertNotContains('17:00', $slots);
+            $this->assertNotContains('18:00', $slots);
+            $this->assertContains('19:00', $slots);
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
+    public function test_change_time_link_returns_to_the_previously_selected_booking_day(): void
+    {
+        Carbon::setTestNow('2026-05-04 09:00:00');
+
+        try {
+            [, $barbershop] = $this->createBarberWithBarbershop();
+            $service = Services::factory()->create([
+                'barbershop_id' => $barbershop->id,
+                'duration' => 30,
+                'visibility' => 'public',
+            ]);
+
+            foreach (range(1, 7) as $dayOfWeek) {
+                Schedules::factory()->create([
+                    'barbershop_id' => $barbershop->id,
+                    'day_of_week' => $dayOfWeek,
+                    'start_time' => '10:00:00',
+                    'end_time' => '14:00:00',
+                ]);
+            }
+
+            $client = User::factory()->create();
+            $datetime = '2026-06-12 10:00';
+
+            $this
+                ->actingAs($client)
+                ->get(route('appointments.confirm', [
+                    'barbershop' => $barbershop,
+                    'service_id' => $service->id,
+                    'datetime' => $datetime,
+                ]))
+                ->assertOk()
+                ->assertSee('datetime=2026-06-12%2010%3A00', false);
+
+            $this
+                ->actingAs($client)
+                ->get(route('appointments.create', [
+                    'barbershop' => $barbershop,
+                    'service' => $service,
+                    'datetime' => $datetime,
+                ]))
+                ->assertOk()
+                ->assertSee("selectedDatetime: '2026-06-12 10:00'", false)
+                ->assertSee('selectedDay === 42', false)
+                ->assertSee('visibleMonth: 1', false);
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
     public function test_pending_and_accepted_appointments_do_not_offer_the_slot_again(): void
     {
         Carbon::setTestNow('2026-05-04 09:00:00');

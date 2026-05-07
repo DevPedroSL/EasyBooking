@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Models\User;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
@@ -41,7 +42,21 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
+        $credentials = [
+            'email' => $this->string('email')->toString(),
+            'password' => $this->string('password')->toString(),
+            'is_banned' => false,
+        ];
+
+        if (! Auth::attempt($credentials, $this->boolean('remember'))) {
+            $user = User::where('email', $this->string('email')->toString())->first();
+
+            if ($user?->is_banned) {
+                throw ValidationException::withMessages([
+                    'email' => 'Tu cuenta ha sido deshabilitada. Contacta con el administrador si crees que es un error.',
+                ]);
+            }
+
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([

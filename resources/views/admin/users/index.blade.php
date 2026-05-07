@@ -3,7 +3,7 @@
 @section('title', 'Gestionar Usuarios')
 
 @section('content')
-<div class="page-shell">
+<div class="page-shell page-shell-wide">
     <div class="page-heading">
         <div>
             <h1 class="page-title">Gestionar Usuarios</h1>
@@ -32,6 +32,7 @@
                     <th class="px-4 py-3 text-left text-sm font-bold text-gray-900">Email</th>
                     <th class="px-4 py-3 text-left text-sm font-bold text-gray-900 hidden md:table-cell">Teléfono</th>
                     <th class="px-4 py-3 text-left text-sm font-bold text-gray-900">Rol</th>
+                    <th class="px-4 py-3 text-left text-sm font-bold text-gray-900">Estado</th>
                     <th class="px-4 py-3 text-left text-sm font-bold text-gray-900 hidden lg:table-cell">Barbería</th>
                     <th class="px-4 py-3 text-left text-sm font-bold text-gray-900">Acciones</th>
                 </tr>
@@ -43,12 +44,52 @@
                         <td class="px-4 py-4 text-sm text-gray-600">{{ $user->email }}</td>
                         <td class="px-4 py-4 text-sm text-gray-600 hidden md:table-cell">{{ $user->phone }}</td>
                         <td class="px-4 py-4 text-sm text-gray-600">{{ ucfirst($user->role) }}</td>
+                        <td class="px-4 py-4 text-sm">
+                            @if($user->is_banned)
+                                <span class="inline-flex rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-bold text-red-700">
+                                    Deshabilitada
+                                </span>
+                            @else
+                                <span class="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
+                                    Activa
+                                </span>
+                            @endif
+                        </td>
                         <td class="px-4 py-4 text-sm text-gray-600 hidden lg:table-cell">{{ $user->barbershop?->name ?? 'Sin barbería' }}</td>
                         <td class="px-4 py-4 text-sm">
-                            <div class="flex flex-col gap-2 sm:flex-row">
-                                <a href="{{ route('admin.users.edit', $user) }}" class="inline-flex items-center justify-center rounded-lg bg-violet-700 px-3 py-2 text-xs font-bold text-white transition hover:bg-violet-800">
+                            <div class="grid min-w-[21rem] gap-2 sm:grid-cols-3">
+                                <a href="{{ route('admin.users.edit', $user) }}" class="inline-flex w-full items-center justify-center rounded-lg bg-violet-700 px-3 py-2 text-xs font-bold text-white transition hover:bg-violet-800">
                                     Editar
                                 </a>
+                                @if($user->is_banned)
+                                    <form
+                                        action="{{ route('admin.users.unban', $user) }}"
+                                        method="POST"
+                                        data-confirm-title="Reactivar cuenta"
+                                        data-confirm-message="Vas a volver a activar esta cuenta."
+                                        data-confirm-button="Reactivar cuenta"
+                                    >
+                                        @csrf
+                                        @method('PATCH')
+                                        <button type="submit" class="w-full rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-emerald-700">
+                                            Reactivar
+                                        </button>
+                                    </form>
+                                @else
+                                    <form
+                                        action="{{ route('admin.users.ban', $user) }}"
+                                        method="POST"
+                                        data-confirm-title="Deshabilitar cuenta"
+                                        data-confirm-message="Este usuario no podra iniciar sesion hasta que vuelvas a activarlo."
+                                        data-confirm-button="Deshabilitar cuenta"
+                                    >
+                                        @csrf
+                                        @method('PATCH')
+                                        <button type="submit" class="w-full rounded-lg bg-amber-500 px-3 py-2 text-xs font-bold text-slate-950 transition hover:bg-amber-400">
+                                            Banear
+                                        </button>
+                                    </form>
+                                @endif
                                 <form
                                     action="{{ route('admin.users.destroy', $user) }}"
                                     method="POST"
@@ -67,7 +108,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="px-6 py-8 text-center text-gray-600">No hay usuarios registrados.</td>
+                        <td colspan="7" class="px-6 py-8 text-center text-gray-600">No hay usuarios registrados.</td>
                     </tr>
                 @endforelse
             </tbody>

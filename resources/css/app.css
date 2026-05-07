@@ -18,6 +18,8 @@ body.eb-body {
     min-height: 100vh;
     background: var(--eb-paper);
     color: var(--eb-ink);
+    display: flex;
+    flex-direction: column;
 }
 
 [x-cloak] {
@@ -25,7 +27,58 @@ body.eb-body {
 }
 
 .app-main {
-    min-height: calc(100vh - 4rem);
+    flex: 1 0 auto;
+}
+
+.app-footer {
+    border-top: 1px solid var(--eb-line);
+    background: rgba(252, 250, 255, 0.92);
+    backdrop-filter: blur(10px);
+}
+
+.app-footer__inner {
+    width: min(1120px, calc(100% - 2rem));
+    margin: 0 auto;
+    padding: 1.25rem 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.app-footer__brand {
+    color: var(--eb-ink);
+    font-size: 1rem;
+    font-weight: 900;
+}
+
+.app-footer__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.75rem;
+}
+
+.app-footer__button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.5rem;
+    border: 1px solid rgba(103, 74, 157, 0.18);
+    border-radius: 999px;
+    background: #fff;
+    color: var(--eb-ink);
+    font-size: 0.92rem;
+    font-weight: 800;
+    padding: 0.65rem 1rem;
+    transition: background-color 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+.app-footer__button:hover {
+    border-color: rgba(103, 74, 157, 0.4);
+    background: #f7f2ff;
+    color: var(--eb-moss);
+    transform: translateY(-1px);
 }
 
 .app-nav {
@@ -85,6 +138,10 @@ body.eb-body {
     width: min(1120px, calc(100% - 2rem));
     margin: 0 auto;
     padding: 2.5rem 0;
+}
+
+.page-shell-wide {
+    width: min(1360px, calc(100% - 2rem));
 }
 
 .page-heading {
@@ -392,6 +449,7 @@ body.eb-body {
     background: rgba(255, 255, 255, 0.78);
     padding: 1rem 0.85rem;
     text-align: center;
+    cursor: pointer;
     transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
 }
 
@@ -409,6 +467,17 @@ body.eb-body {
 
 .booking-day-button.is-empty {
     background: rgba(255, 255, 255, 0.58);
+}
+
+.booking-day-button.is-unavailable {
+    cursor: not-allowed;
+    opacity: 0.68;
+}
+
+.booking-day-button:disabled:hover {
+    transform: none;
+    border-color: rgba(103, 74, 157, 0.16);
+    box-shadow: none;
 }
 
 .booking-day-button.is-empty.is-selected {
@@ -516,6 +585,18 @@ body.eb-body {
 
 body.eb-body .bg-white {
     background-color: var(--eb-surface);
+}
+
+@media (max-width: 640px) {
+    .app-footer__inner {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .app-footer__actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
 }
 
 body.eb-body .bg-gray-50 {
