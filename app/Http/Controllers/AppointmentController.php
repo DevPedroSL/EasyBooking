@@ -6,9 +6,13 @@ use App\Models\Appointment;
 use App\Models\Barbershop;
 use App\Models\Service;
 use App\Services\AppointmentSelectionService;
+use App\Mail\AppointmentAccepted;
+use App\Mail\AppointmentCreated;
+use App\Mail\AppointmentRejected;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Carbon\Carbon;
 
 class AppointmentController extends Controller
@@ -179,7 +183,7 @@ class AppointmentController extends Controller
                 ->withInput();
         }
 
-        Appointment::create([
+        $appointment = Appointment::create([
             'client_id' => Auth::id(),
             'barbershop_id' => $barbershop->id,
             'service_id' => $service->id,
@@ -189,6 +193,8 @@ class AppointmentController extends Controller
             'client_comment' => $validated['client_comment'] ?? null,
             'status' => 'pending',
         ]);
+
+        Mail::to($barbershop->barber->email)->send(new AppointmentCreated($appointment));
 
         return redirect()->route('appointments.my')->with('success', 'Cita reservada exitosamente.');
     }
@@ -407,6 +413,13 @@ class AppointmentController extends Controller
                 ? $barberComment
                 : null,
         ]);
+
+        // Enviar email al cliente
+        if ($validated['status'] === 'accepted') {
+            Mail::to($appointment->client->email)->send(new AppointmentAccepted($appointment));
+        } elseif ($validated['status'] === 'rejected') {
+            Mail::to($appointment->client->email)->send(new AppointmentRejected($appointment));
+        }
 
         return redirect()->back()->with('success', 'Estado de la cita actualizado.');
     }
