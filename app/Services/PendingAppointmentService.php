@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Models\Barbershop;
-use App\Models\Services;
+use App\Models\Service;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -54,7 +54,7 @@ class PendingAppointmentService
             return redirect()->route($fallbackRoute);
         }
 
-        $service = Services::where('id', $pending['service_id'] ?? null)
+        $service = Service::where('id', $pending['service_id'] ?? null)
             ->where('barbershop_id', $barbershop->id)
             ->first();
 

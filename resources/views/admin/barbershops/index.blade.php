@@ -22,7 +22,6 @@
         <tr>
           <th class="px-4 py-3 text-left text-sm font-bold text-gray-900">Nombre</th>
           <th class="px-4 py-3 text-left text-sm font-bold text-gray-900 hidden sm:table-cell">Barbero</th>
-          <th class="px-4 py-3 text-left text-sm font-bold text-gray-900 hidden sm:table-cell">Descripción</th>
           <th class="px-4 py-3 text-left text-sm font-bold text-gray-900 hidden md:table-cell">Dirección</th>
           <th class="px-4 py-3 text-left text-sm font-bold text-gray-900 hidden lg:table-cell">Teléfono</th>
           <th class="px-4 py-3 text-left text-sm font-bold text-gray-900">Visibilidad</th>
@@ -34,7 +33,6 @@
           <tr class="border-b border-gray-200 hover:bg-gray-50 transition">
             <td class="px-4 py-4 text-sm text-gray-900 font-medium">{{ $barbershop->name }}</td>
             <td class="px-4 py-4 text-sm text-gray-600 hidden sm:table-cell">{{ $barbershop->barber?->name ?? 'Sin asignar' }}</td>
-            <td class="px-4 py-4 text-sm text-gray-600 hidden sm:table-cell">{{ Str::limit($barbershop->Description, 50) }}</td>
             <td class="px-4 py-4 text-sm text-gray-600 hidden md:table-cell">{{ Str::limit($barbershop->address, 40) }}</td>
             <td class="px-4 py-4 text-sm text-gray-600 hidden lg:table-cell">{{ $barbershop->phone }}</td>
             <td class="px-4 py-4 text-sm">
@@ -64,7 +62,7 @@
           </tr>
         @empty
           <tr>
-            <td colspan="7" class="px-6 py-8 text-center text-gray-600">
+            <td colspan="6" class="px-6 py-8 text-center text-gray-600">
               No hay barberías creadas aún.
             </td>
           </tr>

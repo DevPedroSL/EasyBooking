@@ -2,15 +2,15 @@
 
 namespace Database\Factories;
 
-use App\Models\Appointments;
+use App\Models\Appointment;
 use App\Models\User;
-use App\Models\Services;
+use App\Models\Service;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Appointments>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Appointment>
  */
-class AppointmentsFactory extends Factory
+class AppointmentFactory extends Factory
 {
     /**
      * Define the model's default state.
@@ -22,8 +22,8 @@ class AppointmentsFactory extends Factory
         $start = fake()->time('H:i');
         $end = date('H:i', strtotime($start) + 3600); // 1 hour later
         $barbershop = \App\Models\Barbershop::inRandomOrder()->first() ?? \App\Models\Barbershop::factory()->create();
-        $service = \App\Models\Services::where('barbershop_id', $barbershop->id)->inRandomOrder()->first()
-            ?? \App\Models\Services::factory()->create(['barbershop_id' => $barbershop->id]);
+        $service = \App\Models\Service::where('barbershop_id', $barbershop->id)->inRandomOrder()->first()
+            ?? \App\Models\Service::factory()->create(['barbershop_id' => $barbershop->id]);
         $status = fake()->randomElement(['pending', 'accepted', 'rejected', 'completed', 'cancelled']);
         $barberComment = in_array($status, ['accepted', 'rejected'], true) ? fake()->optional()->text(80) : null;
 

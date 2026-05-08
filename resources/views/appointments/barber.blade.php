@@ -18,7 +18,27 @@
 
     <div class="eb-panel overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200">
-            <h2 class="text-xl font-black text-gray-900">Citas Pendientes y Confirmadas</h2>
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <h2 class="text-xl font-black text-gray-900">Citas</h2>
+
+                <div class="flex flex-wrap gap-2">
+                    <a
+                        href="{{ route('appointments.barber') }}"
+                        class="inline-flex min-h-10 items-center justify-center rounded-lg px-4 py-2 text-sm font-bold transition {{ $selectedStatus === null ? 'bg-violet-700 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}"
+                    >
+                        Todas
+                    </a>
+
+                    @foreach($statusOptions as $status => $label)
+                        <a
+                            href="{{ route('appointments.barber', ['status' => $status]) }}"
+                            class="inline-flex min-h-10 items-center justify-center rounded-lg px-4 py-2 text-sm font-bold transition {{ $selectedStatus === $status ? 'bg-violet-700 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}"
+                        >
+                            {{ $label }}
+                        </a>
+                    @endforeach
+                </div>
+            </div>
         </div>
 
         <div class="overflow-x-auto">
@@ -77,7 +97,7 @@
                     @empty
                     <tr>
                         <td colspan="7" class="px-6 py-4 text-center text-gray-500">
-                            No hay citas programadas.
+                            No hay citas {{ $selectedStatus ? strtolower($statusOptions[$selectedStatus]) : 'programadas' }}.
                         </td>
                     </tr>
                     @endforelse

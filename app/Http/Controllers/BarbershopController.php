@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Barbershop;
-use App\Models\Services;
+use App\Models\Service;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
@@ -16,59 +16,33 @@ class BarbershopController extends Controller
         return auth()->user()->barbershop;
     }
 
-    public function create()
+    private function redirectWithoutBarbershop()
     {
-        if ($this->currentUserBarbershop()) {
-            return redirect()->route('barbershops.editMy')->with('error', 'Ya tienes una barbería.');
-        }
-
-        $weekdays = $this->weekdayOptions();
-
-        return view('barbershops.create', compact('weekdays'));
+        return redirect()->route('inicio')->with('error', 'No tienes una barbería asignada.');
     }
 
-    public function store(Request $request)
+    public function dashboard()
     {
-        if ($this->currentUserBarbershop()) {
-            return redirect()->route('barbershops.editMy')->with('error', 'Ya tienes una barbería.');
+        $barbershop = $this->currentUserBarbershop();
+        if (!$barbershop) {
+            return $this->redirectWithoutBarbershop();
         }
 
-        $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:barbershops,name',
-            'Description' => 'required|string|max:50',
-            'address' => 'required|string|max:255',
-            'phone' => 'required|string|max:20',
-            'slot_interval_minutes' => 'nullable|integer|in:15,30,45,60',
-            'visibility' => 'required|in:public,private',
-            'image' => 'nullable|image|max:3072',
-            'gallery_images' => 'nullable|array|max:4',
-            'gallery_images.*' => 'image|max:3072',
+        $barbershop->loadCount([
+            'services',
+            'schedules',
+            'appointments',
+            'appointments as pending_appointments_count' => fn ($query) => $query->where('status', 'pending'),
         ]);
-        $scheduleData = $this->validatedScheduleData($request);
 
-        $validated['barber_id'] = auth()->id();
-        $validated['slot_interval_minutes'] = $validated['slot_interval_minutes'] ?? 60;
-
-        if ($request->hasFile('image')) {
-            $validated['image_path'] = $request->file('image')->store('barbershops', 'public');
-        }
-
-        $galleryImagePaths = $this->storeUploadedBarbershopGalleryImages($request);
-        if ($galleryImagePaths !== []) {
-            $validated['image_paths'] = $galleryImagePaths;
-        }
-
-        $barbershop = Barbershop::create($validated);
-        $this->syncSchedules($barbershop, $scheduleData);
-
-        return redirect()->route('barbershops.editMy')->with('success', 'Barbería creada correctamente.');
+        return view('barbershops.dashboard', compact('barbershop'));
     }
 
     public function editMy()
     {
         $barbershop = $this->currentUserBarbershop();
         if (!$barbershop) {
-            return redirect()->route('barbershops.create')->with('error', 'No tienes una barbería. Crea una primero.');
+            return $this->redirectWithoutBarbershop();
         }
 
         $barbershop->load('schedules');
@@ -81,15 +55,13 @@ class BarbershopController extends Controller
     {
         $barbershop = $this->currentUserBarbershop();
         if (!$barbershop) {
-            return redirect()->route('barbershops.create')->with('error', 'No tienes una barbería.');
+            return $this->redirectWithoutBarbershop();
         }
 
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:barbershops,name,' . $barbershop->id,
-            'Description' => 'required|string|max:50',
             'address' => 'required|string|max:255',
             'phone' => 'required|string|max:20',
-            'slot_interval_minutes' => 'nullable|integer|in:15,30,45,60',
             'visibility' => 'required|in:public,private',
             'image' => 'nullable|image|max:3072',
             'remove_image' => 'nullable|boolean',
@@ -98,14 +70,11 @@ class BarbershopController extends Controller
             'remove_gallery_images' => 'nullable|array',
             'remove_gallery_images.*' => 'integer',
         ]);
-        $scheduleData = $this->validatedScheduleData($request);
 
         $barbershop->update([
             'name' => $validated['name'],
-            'Description' => $validated['Description'],
             'address' => $validated['address'],
             'phone' => $validated['phone'],
-            'slot_interval_minutes' => $validated['slot_interval_minutes'] ?? $barbershop->slot_interval_minutes ?? 60,
             'visibility' => $validated['visibility'],
         ]);
 
@@ -142,16 +111,48 @@ class BarbershopController extends Controller
             'image_path' => $barbershop->image_path,
             'image_paths' => $finalImagePaths === [] ? null : $finalImagePaths,
         ]);
-        $this->syncSchedules($barbershop, $scheduleData);
 
         return redirect()->route('barbershops.editMy')->with('success', 'Barbería actualizada correctamente.');
+    }
+
+    public function editSchedule()
+    {
+        $barbershop = $this->currentUserBarbershop();
+        if (!$barbershop) {
+            return $this->redirectWithoutBarbershop();
+        }
+
+        $barbershop->load('schedules');
+        $weekdays = $this->weekdayOptions();
+
+        return view('barbershops.schedule', compact('barbershop', 'weekdays'));
+    }
+
+    public function updateSchedule(Request $request)
+    {
+        $barbershop = $this->currentUserBarbershop();
+        if (!$barbershop) {
+            return $this->redirectWithoutBarbershop();
+        }
+
+        $validated = $request->validate([
+            'slot_interval_minutes' => 'nullable|integer|in:15,30,45,60',
+        ]);
+        $scheduleData = $this->validatedScheduleData($request);
+
+        $barbershop->update([
+            'slot_interval_minutes' => $validated['slot_interval_minutes'] ?? $barbershop->slot_interval_minutes ?? 60,
+        ]);
+        $this->syncSchedules($barbershop, $scheduleData);
+
+        return redirect()->route('barbershops.schedule.edit')->with('success', 'Horario actualizado correctamente.');
     }
 
     public function servicesIndex()
     {
         $barbershop = $this->currentUserBarbershop();
         if (!$barbershop) {
-            return redirect()->route('barbershops.create')->with('error', 'No tienes una barbería.');
+            return $this->redirectWithoutBarbershop();
         }
 
         $services = $barbershop->services()->orderBy('name')->get();
@@ -163,7 +164,7 @@ class BarbershopController extends Controller
     {
         $barbershop = $this->currentUserBarbershop();
         if (!$barbershop) {
-            return redirect()->route('barbershops.create')->with('error', 'No tienes una barbería.');
+            return $this->redirectWithoutBarbershop();
         }
 
         return view('barbershops.services.create', compact('barbershop'));
@@ -173,7 +174,7 @@ class BarbershopController extends Controller
     {
         $barbershop = $this->currentUserBarbershop();
         if (!$barbershop) {
-            return redirect()->route('barbershops.create')->with('error', 'No tienes una barbería.');
+            return $this->redirectWithoutBarbershop();
         }
 
         $validated = $request->validate([
@@ -205,11 +206,11 @@ class BarbershopController extends Controller
         return redirect()->route('barbershops.services.index')->with('success', 'Servicio creado correctamente.');
     }
 
-    public function editService(Services $service)
+    public function editService(Service $service)
     {
         $barbershop = $this->currentUserBarbershop();
         if (!$barbershop) {
-            return redirect()->route('barbershops.create')->with('error', 'No tienes una barbería.');
+            return $this->redirectWithoutBarbershop();
         }
 
         abort_unless($service->barbershop_id === $barbershop->id, 403);
@@ -217,11 +218,11 @@ class BarbershopController extends Controller
         return view('barbershops.services.edit', compact('barbershop', 'service'));
     }
 
-    public function updateService(Request $request, Services $service)
+    public function updateService(Request $request, Service $service)
     {
         $barbershop = $this->currentUserBarbershop();
         if (!$barbershop) {
-            return redirect()->route('barbershops.create')->with('error', 'No tienes una barbería.');
+            return $this->redirectWithoutBarbershop();
         }
 
         abort_unless($service->barbershop_id === $barbershop->id, 403);
@@ -289,7 +290,7 @@ class BarbershopController extends Controller
         return Storage::disk('public')->response($imagePath);
     }
 
-    public function serviceImage(Services $service): StreamedResponse
+    public function serviceImage(Service $service): StreamedResponse
     {
         abort_unless($service->isVisibleTo(auth()->user()), 404);
         $imagePath = $service->stored_image_paths[0] ?? null;
@@ -298,7 +299,7 @@ class BarbershopController extends Controller
         return Storage::disk('public')->response($imagePath);
     }
 
-    public function serviceGalleryImage(Services $service, int $index): StreamedResponse
+    public function serviceGalleryImage(Service $service, int $index): StreamedResponse
     {
         abort_unless($service->isVisibleTo(auth()->user()), 404);
 
@@ -308,11 +309,11 @@ class BarbershopController extends Controller
         return Storage::disk('public')->response($imagePath);
     }
 
-    public function destroyService(Services $service)
+    public function destroyService(Service $service)
     {
         $barbershop = $this->currentUserBarbershop();
         if (!$barbershop) {
-            return redirect()->route('barbershops.create')->with('error', 'No tienes una barbería.');
+            return $this->redirectWithoutBarbershop();
         }
 
         abort_unless($service->barbershop_id === $barbershop->id, 403);
@@ -500,7 +501,7 @@ class BarbershopController extends Controller
         return [$remainingPaths, $removedPaths];
     }
 
-    private function serviceImagePathsAfterRemovalSelection(Services $service, Request $request): array
+    private function serviceImagePathsAfterRemovalSelection(Service $service, Request $request): array
     {
         $currentPaths = $service->stored_image_paths;
         $removeIndexes = collect($request->input('remove_images', []))

@@ -3,9 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\Barbershop;
-use App\Models\Appointments;
-use App\Models\Schedules;
-use App\Models\Services;
+use App\Models\Appointment;
+use App\Models\Schedule;
+use App\Models\Service;
 use App\Models\User;
 use App\Services\AppointmentSelectionService;
 use Carbon\Carbon;
@@ -16,11 +16,44 @@ class BarbershopManagementTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_barbershop_dashboard_shows_owner_management_menu(): void
+    {
+        [$user, $barbershop] = $this->createBarberWithBarbershop();
+
+        $response = $this
+            ->actingAs($user)
+            ->get(route('barbershops.dashboard'));
+
+        $response
+            ->assertOk()
+            ->assertSee($barbershop->name)
+            ->assertSee('Editar barberia')
+            ->assertSee('Horario')
+            ->assertSee('Servicios')
+            ->assertSee('Agenda')
+            ->assertSee('Gestionar citas')
+            ->assertSee(route('barbershops.editMy', absolute: false), false)
+            ->assertSee(route('barbershops.schedule.edit', absolute: false), false)
+            ->assertSee(route('barbershops.services.index', absolute: false), false)
+            ->assertSee(route('appointments.agenda', absolute: false), false)
+            ->assertSee(route('appointments.barber', absolute: false), false);
+    }
+
+    public function test_user_without_barbershop_is_redirected_from_barbershop_dashboard(): void
+    {
+        $user = User::factory()->barber()->create();
+
+        $this
+            ->actingAs($user)
+            ->get(route('barbershops.dashboard'))
+            ->assertRedirect(route('inicio'));
+    }
+
     public function test_general_barbershop_edit_page_shows_services_link_instead_of_services_form(): void
     {
         [$user, $barbershop] = $this->createBarberWithBarbershop();
 
-        Services::factory()->create([
+        Service::factory()->create([
             'barbershop_id' => $barbershop->id,
             'name' => 'Corte clásico',
         ]);
@@ -40,7 +73,7 @@ class BarbershopManagementTest extends TestCase
     {
         [$user, $barbershop] = $this->createBarberWithBarbershop();
 
-        Services::factory()->create([
+        Service::factory()->create([
             'barbershop_id' => $barbershop->id,
             'name' => 'Arreglo de barba',
         ]);
@@ -73,7 +106,7 @@ class BarbershopManagementTest extends TestCase
             ->assertSessionHasNoErrors()
             ->assertRedirect(route('barbershops.services.index'));
 
-        $service = $barbershop->services()->first();
+        $service = $barbershop->services()->where('name', 'Corte premium')->first();
 
         $this->assertNotNull($service);
         $this->assertSame('Corte premium', $service->name);
@@ -106,13 +139,13 @@ class BarbershopManagementTest extends TestCase
     {
         [, $barbershop] = $this->createBarberWithBarbershop();
 
-        $publicService = Services::factory()->create([
+        $publicService = Service::factory()->create([
             'barbershop_id' => $barbershop->id,
             'name' => 'Corte visible',
             'visibility' => 'public',
         ]);
 
-        $privateService = Services::factory()->create([
+        $privateService = Service::factory()->create([
             'barbershop_id' => $barbershop->id,
             'name' => 'Servicio interno',
             'visibility' => 'private',
@@ -138,7 +171,7 @@ class BarbershopManagementTest extends TestCase
 
         try {
             [, $barbershop] = $this->createBarberWithBarbershop();
-            $service = Services::factory()->create([
+            $service = Service::factory()->create([
                 'barbershop_id' => $barbershop->id,
                 'name' => 'Corte semanal',
                 'duration' => 30,
@@ -146,7 +179,7 @@ class BarbershopManagementTest extends TestCase
             ]);
 
             foreach (range(1, 7) as $dayOfWeek) {
-                Schedules::factory()->create([
+                Schedule::factory()->create([
                     'barbershop_id' => $barbershop->id,
                     'day_of_week' => $dayOfWeek,
                     'start_time' => '10:00:00',
@@ -188,13 +221,13 @@ class BarbershopManagementTest extends TestCase
             [, $barbershop] = $this->createBarberWithBarbershop();
             $barbershop->schedules()->delete();
 
-            $service = Services::factory()->create([
+            $service = Service::factory()->create([
                 'barbershop_id' => $barbershop->id,
                 'duration' => 30,
                 'visibility' => 'public',
             ]);
 
-            Schedules::factory()->create([
+            Schedule::factory()->create([
                 'barbershop_id' => $barbershop->id,
                 'day_of_week' => Carbon::create(2026, 5, 6)->dayOfWeekIso,
                 'start_time' => '10:00:00',
@@ -226,13 +259,13 @@ class BarbershopManagementTest extends TestCase
             [, $barbershop] = $this->createBarberWithBarbershop();
             $barbershop->schedules()->delete();
 
-            $service = Services::factory()->create([
+            $service = Service::factory()->create([
                 'barbershop_id' => $barbershop->id,
                 'duration' => 30,
                 'visibility' => 'public',
             ]);
 
-            $schedule = Schedules::factory()->create([
+            $schedule = Schedule::factory()->create([
                 'barbershop_id' => $barbershop->id,
                 'day_of_week' => Carbon::today()->dayOfWeekIso,
                 'start_time' => '17:00:00',
@@ -256,14 +289,14 @@ class BarbershopManagementTest extends TestCase
 
         try {
             [, $barbershop] = $this->createBarberWithBarbershop();
-            $service = Services::factory()->create([
+            $service = Service::factory()->create([
                 'barbershop_id' => $barbershop->id,
                 'duration' => 30,
                 'visibility' => 'public',
             ]);
 
             foreach (range(1, 7) as $dayOfWeek) {
-                Schedules::factory()->create([
+                Schedule::factory()->create([
                     'barbershop_id' => $barbershop->id,
                     'day_of_week' => $dayOfWeek,
                     'start_time' => '10:00:00',
@@ -306,7 +339,7 @@ class BarbershopManagementTest extends TestCase
 
         try {
             [, $barbershop] = $this->createBarberWithBarbershop();
-            $service = Services::factory()->create([
+            $service = Service::factory()->create([
                 'barbershop_id' => $barbershop->id,
                 'duration' => 30,
                 'visibility' => 'public',
@@ -314,14 +347,14 @@ class BarbershopManagementTest extends TestCase
 
             $date = Carbon::create(2026, 6, 3);
 
-            Schedules::factory()->create([
+            Schedule::factory()->create([
                 'barbershop_id' => $barbershop->id,
                 'day_of_week' => $date->dayOfWeekIso,
                 'start_time' => '10:00:00',
                 'end_time' => '15:00:00',
             ]);
 
-            Appointments::factory()->create([
+            Appointment::factory()->create([
                 'barbershop_id' => $barbershop->id,
                 'service_id' => $service->id,
                 'appointment_date' => $date->format('Y-m-d'),
@@ -330,7 +363,7 @@ class BarbershopManagementTest extends TestCase
                 'status' => 'pending',
             ]);
 
-            Appointments::factory()->create([
+            Appointment::factory()->create([
                 'barbershop_id' => $barbershop->id,
                 'service_id' => $service->id,
                 'appointment_date' => $date->format('Y-m-d'),
@@ -339,7 +372,7 @@ class BarbershopManagementTest extends TestCase
                 'status' => 'accepted',
             ]);
 
-            Appointments::factory()->create([
+            Appointment::factory()->create([
                 'barbershop_id' => $barbershop->id,
                 'service_id' => $service->id,
                 'appointment_date' => $date->format('Y-m-d'),

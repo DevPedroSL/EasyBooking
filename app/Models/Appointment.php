@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class Appointments extends Model
+class Appointment extends Model
 {
     use HasFactory;
     protected $fillable = [
@@ -43,6 +43,6 @@ class Appointments extends Model
 
     public function service()
     {
-        return $this->belongsTo(Services::class, 'service_id');
+        return $this->belongsTo(Service::class, 'service_id');
     }
 }

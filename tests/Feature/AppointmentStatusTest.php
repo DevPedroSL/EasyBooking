@@ -2,9 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Models\Appointments;
+use App\Models\Appointment;
 use App\Models\Barbershop;
-use App\Models\Services;
+use App\Models\Service;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -100,6 +100,44 @@ class AppointmentStatusTest extends TestCase
             ->assertDontSee('Confirmar rechazo');
     }
 
+    public function test_barber_can_filter_appointments_by_status(): void
+    {
+        [$barber, $pendingAppointment] = $this->createPendingAppointmentForBarber();
+        $barbershop = $pendingAppointment->barbershop;
+        $service = $pendingAppointment->service;
+        $acceptedClient = User::factory()->customer()->create(['name' => 'Cliente Aceptado']);
+        $rejectedClient = User::factory()->customer()->create(['name' => 'Cliente Rechazado']);
+
+        Appointment::factory()->create([
+            'client_id' => $acceptedClient->id,
+            'barbershop_id' => $barbershop->id,
+            'service_id' => $service->id,
+            'appointment_date' => '2026-05-10',
+            'start_time' => '11:00:00',
+            'end_time' => '11:30:00',
+            'status' => 'accepted',
+        ]);
+
+        Appointment::factory()->create([
+            'client_id' => $rejectedClient->id,
+            'barbershop_id' => $barbershop->id,
+            'service_id' => $service->id,
+            'appointment_date' => '2026-05-10',
+            'start_time' => '12:00:00',
+            'end_time' => '12:30:00',
+            'status' => 'rejected',
+        ]);
+
+        $this
+            ->actingAs($barber)
+            ->get(route('appointments.barber', ['status' => 'accepted']))
+            ->assertOk()
+            ->assertSee('Cliente Aceptado')
+            ->assertSee('Aceptada')
+            ->assertDontSee($pendingAppointment->client->name)
+            ->assertDontSee('Cliente Rechazado');
+    }
+
     public function test_barber_can_manage_pending_appointment_from_details_page(): void
     {
         [$barber, $appointment] = $this->createPendingAppointmentForBarber();
@@ -168,10 +206,10 @@ class AppointmentStatusTest extends TestCase
         $barbershop = Barbershop::factory()->create([
             'barber_id' => $barber->id,
         ]);
-        $service = Services::factory()->create([
+        $service = Service::factory()->create([
             'barbershop_id' => $barbershop->id,
         ]);
-        $appointment = Appointments::factory()->create(array_merge([
+        $appointment = Appointment::factory()->create(array_merge([
             'client_id' => $client->id,
             'barbershop_id' => $barbershop->id,
             'service_id' => $service->id,

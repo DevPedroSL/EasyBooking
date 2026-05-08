@@ -3,8 +3,8 @@
 namespace Database\Seeders;
 
 use App\Models\Barbershop;
-use App\Models\Schedules;
-use App\Models\Services;
+use App\Models\Schedule;
+use App\Models\Service;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -39,7 +39,6 @@ class BarbershopSeeder extends Seeder
             'name' => 'Barberia 1',
         ], [
             'barber_id' => $barber->id,
-            'Description' => 'Cortes buenos',
             'address' => 'Calle 5, Madrid',
             'phone' => '612345678',
             'slot_interval_minutes' => 60,
@@ -68,7 +67,7 @@ class BarbershopSeeder extends Seeder
         ];
 
         foreach ($services as $service) {
-            Services::updateOrCreate([
+            Service::updateOrCreate([
                 'barbershop_id' => $barbershop->id,
                 'name' => $service['name'],
             ], [
@@ -80,7 +79,7 @@ class BarbershopSeeder extends Seeder
         }
 
         foreach ([1, 2, 3, 4, 5] as $day) {
-            Schedules::updateOrCreate([
+            Schedule::updateOrCreate([
                 'barbershop_id' => $barbershop->id,
                 'day_of_week' => $day,
             ], [

@@ -2,14 +2,14 @@
 
 namespace Database\Factories;
 
-use App\Models\Schedules;
+use App\Models\Schedule;
 use App\Models\Barbershop;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Schedules>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Schedule>
  */
-class SchedulesFactory extends Factory
+class ScheduleFactory extends Factory
 {
     /**
      * Define the model's default state.

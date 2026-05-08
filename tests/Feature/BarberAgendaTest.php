@@ -2,10 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Models\Appointments;
+use App\Models\Appointment;
 use App\Models\Barbershop;
-use App\Models\Schedules;
-use App\Models\Services;
+use App\Models\Schedule;
+use App\Models\Service;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -25,7 +25,7 @@ class BarberAgendaTest extends TestCase
                 'name' => 'Cliente Agenda',
             ]);
 
-            Appointments::factory()->create([
+            Appointment::factory()->create([
                 'client_id' => $client->id,
                 'barbershop_id' => $barbershop->id,
                 'service_id' => $service->id,
@@ -35,7 +35,7 @@ class BarberAgendaTest extends TestCase
                 'status' => 'accepted',
             ]);
 
-            Appointments::factory()->create([
+            Appointment::factory()->create([
                 'client_id' => $client->id,
                 'barbershop_id' => $barbershop->id,
                 'service_id' => $service->id,
@@ -99,20 +99,20 @@ class BarberAgendaTest extends TestCase
                 'name' => 'Cliente Tarde',
             ]);
 
-            Schedules::factory()->create([
+            Schedule::factory()->create([
                 'barbershop_id' => $barbershop->id,
                 'day_of_week' => Carbon::create(2026, 5, 6)->dayOfWeekIso,
                 'start_time' => '10:00:00',
                 'end_time' => '12:00:00',
             ]);
-            Schedules::factory()->create([
+            Schedule::factory()->create([
                 'barbershop_id' => $barbershop->id,
                 'day_of_week' => Carbon::create(2026, 5, 6)->dayOfWeekIso,
                 'start_time' => '16:00:00',
                 'end_time' => '18:00:00',
             ]);
 
-            Appointments::factory()->create([
+            Appointment::factory()->create([
                 'client_id' => $client->id,
                 'barbershop_id' => $barbershop->id,
                 'service_id' => $service->id,
@@ -152,12 +152,12 @@ class BarberAgendaTest extends TestCase
         ]);
         $barbershop->schedules()->delete();
 
-        $service = Services::factory()->create([
+        $service = Service::factory()->create([
             'barbershop_id' => $barbershop->id,
             'duration' => 30,
         ]);
 
-        Schedules::factory()->create([
+        Schedule::factory()->create([
             'barbershop_id' => $barbershop->id,
             'day_of_week' => Carbon::create(2026, 5, 6)->dayOfWeekIso,
             'start_time' => '10:00:00',

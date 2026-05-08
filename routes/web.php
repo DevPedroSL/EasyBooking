@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\BarbershopController;
 use App\Http\Controllers\AppointmentController;
+use App\Models\Barbershop;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -11,7 +12,7 @@ Route::get('/', function (Request $request) {
     $name = trim((string) $request->query('name', ''));
     $address = trim((string) $request->query('address', ''));
 
-    $barbershops = \App\Models\Barbershop::query()
+    $barbershops = Barbershop::query()
         ->publiclyVisible()
         ->when($name !== '', function ($query) use ($name) {
             $query->where('name', 'like', '%' . $name . '%');
@@ -26,7 +27,7 @@ Route::get('/', function (Request $request) {
 
 Route::get('/inicio', function () {
     return redirect()->route('inicio');
-});
+})->name('inicio.redirect');
 
 Route::view('/contacto', 'contact')->name('contact');
 Route::view('/legal', 'legal')->name('legal');
@@ -37,27 +38,27 @@ Route::get('/services/{service}/image', [BarbershopController::class, 'serviceIm
 Route::get('/services/{service}/images/{index}', [BarbershopController::class, 'serviceGalleryImage'])->name('services.images.show');
 Route::get('/users/{user}/avatar', [ProfileController::class, 'avatar'])->name('users.avatar');
 
+Route::get('/barbershop/{barbershop}/service/{service}/book', [AppointmentController::class, 'create'])->name('appointments.create');
+Route::get('/barbershop/{barbershop}/appointments/confirm', [AppointmentController::class, 'confirm'])->name('appointments.confirm')->middleware('auth');
+Route::post('/barbershop/{barbershop}/appointments', [AppointmentController::class, 'store'])->name('appointments.store')->middleware('auth');
+Route::get('/my-appointments', [AppointmentController::class, 'my'])->name('appointments.my')->middleware('auth');
+Route::get('/barber/appointments', [AppointmentController::class, 'barberAppointments'])->name('appointments.barber')->middleware('auth');
+Route::get('/barber/agenda', [AppointmentController::class, 'barberAgenda'])->name('appointments.agenda')->middleware('auth');
+Route::get('/appointments/{appointment}', [AppointmentController::class, 'show'])->name('appointments.show')->middleware('auth');
+Route::patch('/appointments/{appointment}/cancel', [AppointmentController::class, 'cancel'])->name('appointments.cancel')->middleware('auth');
+Route::patch('/appointments/{appointment}/status', [AppointmentController::class, 'updateStatus'])->name('appointments.updateStatus')->middleware('auth');
+
 Route::get('/barbershop/{name}', function ($name) {
-    $barbershop = \App\Models\Barbershop::where('name', urldecode($name))->with('services', 'barber')->firstOrFail();
+    $barbershop = Barbershop::where('name', urldecode($name))->with('services', 'barber')->firstOrFail();
 
     abort_unless($barbershop->isVisibleTo(auth()->user()), 404);
 
     return view('barbershop', compact('barbershop'));
 })->name('barbershop');
 
-Route::get('/barbershop/{barbershop}/service/{service}/book', [App\Http\Controllers\AppointmentController::class, 'create'])->name('appointments.create');
-Route::get('/barbershop/{barbershop}/appointments/confirm', [App\Http\Controllers\AppointmentController::class, 'confirm'])->name('appointments.confirm')->middleware('auth');
-Route::post('/barbershop/{barbershop}/appointments', [App\Http\Controllers\AppointmentController::class, 'store'])->name('appointments.store')->middleware('auth');
-Route::get('/my-appointments', [App\Http\Controllers\AppointmentController::class, 'my'])->name('appointments.my')->middleware('auth');
-Route::get('/barber/appointments', [App\Http\Controllers\AppointmentController::class, 'barberAppointments'])->name('appointments.barber')->middleware('auth');
-Route::get('/barber/agenda', [App\Http\Controllers\AppointmentController::class, 'barberAgenda'])->name('appointments.agenda')->middleware('auth');
-Route::get('/appointments/{appointment}', [App\Http\Controllers\AppointmentController::class, 'show'])->name('appointments.show')->middleware('auth');
-Route::patch('/appointments/{appointment}/cancel', [App\Http\Controllers\AppointmentController::class, 'cancel'])->name('appointments.cancel')->middleware('auth');
-Route::patch('/appointments/{appointment}/status', [App\Http\Controllers\AppointmentController::class, 'updateStatus'])->name('appointments.updateStatus')->middleware('auth');
-
 Route::get('/dashboard', function () {
     return redirect()->route('inicio');
-})->middleware(['auth', 'verified']);
+})->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -67,10 +68,11 @@ Route::middleware('auth')->group(function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
     // User barbershop routes
-    Route::get('/my-barbershop/create', [BarbershopController::class, 'create'])->name('barbershops.create');
-    Route::post('/my-barbershop', [BarbershopController::class, 'store'])->name('barbershops.store');
+    Route::get('/my-barbershop', [BarbershopController::class, 'dashboard'])->name('barbershops.dashboard');
     Route::get('/my-barbershop/edit', [BarbershopController::class, 'editMy'])->name('barbershops.editMy');
     Route::patch('/my-barbershop', [BarbershopController::class, 'updateMy'])->name('barbershops.updateMy');
+    Route::get('/my-barbershop/schedule', [BarbershopController::class, 'editSchedule'])->name('barbershops.schedule.edit');
+    Route::patch('/my-barbershop/schedule', [BarbershopController::class, 'updateSchedule'])->name('barbershops.schedule.update');
     Route::get('/my-barbershop/services', [BarbershopController::class, 'servicesIndex'])->name('barbershops.services.index');
     Route::get('/my-barbershop/services/create', [BarbershopController::class, 'createService'])->name('barbershops.services.create');
     Route::post('/my-barbershop/services', [BarbershopController::class, 'storeService'])->name('barbershops.services.store');

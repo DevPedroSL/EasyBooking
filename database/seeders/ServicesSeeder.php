@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\Services;
+use App\Models\Service;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -15,7 +15,7 @@ class ServicesSeeder extends Seeder
      */
     public function run(): void
     {
-        // Services are now created in BarbershopSeeder
-        // Services::factory(5)->create();
+        // Service records are now created in BarbershopSeeder.
+        // Service::factory(5)->create();
     }
 }

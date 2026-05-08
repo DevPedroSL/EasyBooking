@@ -18,6 +18,9 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->integer('duration');
             $table->decimal('price', 8, 2);
+            $table->string('visibility')->default('public');
+            $table->string('image_path')->nullable();
+            $table->json('image_paths')->nullable();
             $table->timestamps();
         });
     }

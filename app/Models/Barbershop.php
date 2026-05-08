@@ -14,7 +14,6 @@ class Barbershop extends Model
     protected $fillable = [
         'barber_id',
         'name',
-        'Description',
         'address',
         'phone',
         'slot_interval_minutes',
@@ -40,12 +39,12 @@ class Barbershop extends Model
 
     public function services()
     {
-        return $this->hasMany(Services::class);
+        return $this->hasMany(Service::class);
     }
 
     public function schedules()
     {
-        return $this->hasMany(Schedules::class);
+        return $this->hasMany(Schedule::class);
     }
 
     public function users()
@@ -55,7 +54,7 @@ class Barbershop extends Model
 
     public function appointments()
     {
-        return $this->hasMany(Appointments::class);
+        return $this->hasMany(Appointment::class);
     }
 
     public function scopePubliclyVisible(Builder $query): Builder

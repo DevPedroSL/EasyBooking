@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Storage;
 
-class Services extends Model
+class Service extends Model
 {
     use HasFactory;
 
@@ -40,7 +40,7 @@ class Services extends Model
 
     public function appointments()
     {
-        return $this->hasMany(Appointments::class, 'service_id');
+        return $this->hasMany(Appointment::class, 'service_id');
     }
 
     public function scopePubliclyVisible(Builder $query): Builder

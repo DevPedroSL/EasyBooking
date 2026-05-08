@@ -21,6 +21,8 @@ return new class extends Migration
             $table->time('end_time');
             $table->enum('status', ['pending', 'accepted', 'rejected', 'completed', 'cancelled'])->default('pending');
             $table->text('client_comment')->nullable();
+            $table->text('rejection_reason')->nullable();
+            $table->text('barber_comment')->nullable();
             $table->timestamps();
         });
     }

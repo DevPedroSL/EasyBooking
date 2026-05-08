@@ -36,15 +36,10 @@
         @endguest
         
         @auth
+          @php($ownedBarbershop = auth()->user()->barbershop)
           <a href="{{ route('appointments.my') }}" class="text-sm font-medium">Mis Citas</a>
-          @if(!auth()->user()->barbershop)
-            <a href="{{ route('barbershops.create') }}" class="text-sm font-medium">Crear mi propia barbería</a>
-          @else
-            <a href="{{ route('barbershops.editMy') }}" class="text-sm font-medium">Gestionar mi barbería</a>
-          @endif
-          @if(auth()->user()->barbershop)
-            <a href="{{ route('appointments.agenda') }}" class="text-sm font-medium">Agenda</a>
-            <a href="{{ route('appointments.barber') }}" class="nav-action inline-block px-3 py-1 text-sm font-medium transition-colors">Gestionar Citas</a>
+          @if($ownedBarbershop)
+            <a href="{{ route('barbershops.dashboard') }}" class="nav-action inline-block px-3 py-1 text-sm font-medium transition-colors">Mi barbería</a>
           @endif
           @if(auth()->user()->role === 'admin')
             <a href="{{ route('admin.dashboard') }}" class="nav-action inline-block px-3 py-1 text-sm font-medium transition-colors">Panel Admin</a>
@@ -59,8 +54,11 @@
             <span>{{ auth()->user()->name }}</span>
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
           </button>
-          <div id="user-dropdown" class="user-dropdown hidden absolute right-0 mt-2 w-48 shadow-lg z-50">
+          <div id="user-dropdown" class="user-dropdown hidden absolute right-0 mt-2 w-56 shadow-lg z-50">
             <a href="{{ route('profile.edit') }}" class="block px-4 py-2 text-sm">Editar Perfil</a>
+            @if($ownedBarbershop)
+              <a href="{{ route('barbershops.dashboard') }}" class="block px-4 py-2 text-sm">Mi barbería</a>
+            @endif
             @if(auth()->user()->role === 'admin')
               <a href="{{ route('admin.dashboard') }}" class="block px-4 py-2 text-sm">Panel Admin</a>
             @endif
@@ -123,18 +121,26 @@
         </div>
 
         <script>
-        function toggleDropdown() {
-          const dropdown = document.getElementById('user-dropdown');
+        function toggleDropdown(dropdownId = 'user-dropdown') {
+          const dropdown = document.getElementById(dropdownId);
+          if (!dropdown) {
+            return;
+          }
+
           dropdown.classList.toggle('hidden');
         }
 
-        // Close dropdown when clicking outside
         document.addEventListener('click', function(event) {
-          const dropdown = document.getElementById('user-dropdown');
-          const button = document.getElementById('user-menu-button');
-          if (button && !button.contains(event.target)) {
-            dropdown.classList.add('hidden');
-          }
+          [
+            ['user-menu-button', 'user-dropdown'],
+          ].forEach(function ([buttonId, dropdownId]) {
+            const dropdown = document.getElementById(dropdownId);
+            const button = document.getElementById(buttonId);
+
+            if (button && dropdown && !button.contains(event.target) && !dropdown.contains(event.target)) {
+              dropdown.classList.add('hidden');
+            }
+          });
         });
 
         (() => {

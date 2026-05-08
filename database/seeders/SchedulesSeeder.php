@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\Schedules;
+use App\Models\Schedule;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -15,6 +15,6 @@ class SchedulesSeeder extends Seeder
      */
     public function run(): void
     {
-        // Schedules are created in BarbershopSeeder.
+        // Schedule records are created in BarbershopSeeder.
     }
 }

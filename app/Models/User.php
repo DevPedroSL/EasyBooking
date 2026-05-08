@@ -63,12 +63,12 @@ class User extends Authenticatable
 
     public function appointmentsAsClient()
     {
-        return $this->hasMany(Appointments::class, 'client_id');
+        return $this->hasMany(Appointment::class, 'client_id');
     }
 
     public function appointmentsAsBarbershop()
     {
-        return $this->hasMany(Appointments::class, 'barbershop_id');
+        return $this->hasMany(Appointment::class, 'barbershop_id');
     }
 
     public function getAvatarUrlAttribute(): string

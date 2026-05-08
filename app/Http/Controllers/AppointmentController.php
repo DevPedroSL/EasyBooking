@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Appointments;
+use App\Models\Appointment;
 use App\Models\Barbershop;
-use App\Models\Services;
+use App\Models\Service;
 use App\Services\AppointmentSelectionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class AppointmentController extends Controller
@@ -17,7 +18,7 @@ class AppointmentController extends Controller
     ) {
     }
 
-    public function create(Request $request, Barbershop $barbershop, Services $service)
+    public function create(Request $request, Barbershop $barbershop, Service $service)
     {
         abort_unless($barbershop->isVisibleTo(Auth::user()), 404);
 
@@ -178,7 +179,7 @@ class AppointmentController extends Controller
                 ->withInput();
         }
 
-        Appointments::create([
+        Appointment::create([
             'client_id' => Auth::id(),
             'barbershop_id' => $barbershop->id,
             'service_id' => $service->id,
@@ -192,7 +193,7 @@ class AppointmentController extends Controller
         return redirect()->route('appointments.my')->with('success', 'Cita reservada exitosamente.');
     }
 
-    public function show(Appointments $appointment)
+    public function show(Appointment $appointment)
     {
         $appointment->load('client', 'service', 'barbershop');
 
@@ -210,27 +211,39 @@ class AppointmentController extends Controller
 
     public function my()
     {
-        $appointments = Appointments::where('client_id', Auth::id())
+        $appointments = Appointment::where('client_id', Auth::id())
             ->with('barbershop', 'service')
             ->get();
 
         return view('appointments.my', compact('appointments'));
     }
 
-    public function barberAppointments()
+    public function barberAppointments(Request $request)
     {
         $barbershop = Auth::user()->barbershop;
         if (!$barbershop) {
             abort(403, 'No tienes una barbería asignada.');
         }
 
-        $appointments = Appointments::where('barbershop_id', $barbershop->id)
+        $statusOptions = [
+            'pending' => 'Pendientes',
+            'accepted' => 'Aceptadas',
+            'rejected' => 'Rechazadas',
+        ];
+        $selectedStatus = $request->query('status');
+        if (!array_key_exists($selectedStatus, $statusOptions)) {
+            $selectedStatus = null;
+        }
+
+        $appointments = Appointment::query()
+            ->where('barbershop_id', $barbershop->id)
+            ->when($selectedStatus, fn ($query) => $query->where('status', $selectedStatus))
             ->with('client', 'service')
             ->orderBy('appointment_date')
             ->orderBy('start_time')
             ->get();
 
-        return view('appointments.barber', compact('appointments', 'barbershop'));
+        return view('appointments.barber', compact('appointments', 'barbershop', 'statusOptions', 'selectedStatus'));
     }
 
     public function barberAgenda(Request $request)
@@ -264,7 +277,7 @@ class AppointmentController extends Controller
             ->values();
         $schedule = $schedules->first();
 
-        $appointmentCountsByDate = Appointments::where('barbershop_id', $barbershop->id)
+        $appointmentCountsByDate = Appointment::where('barbershop_id', $barbershop->id)
             ->whereBetween('appointment_date', [$firstMonthStart->format('Y-m-d'), $calendarEnd->format('Y-m-d')])
             ->whereIn('status', ['pending', 'accepted'])
             ->selectRaw('appointment_date, count(*) as appointments_count')
@@ -317,7 +330,7 @@ class AppointmentController extends Controller
             ];
         }
 
-        $appointments = Appointments::where('barbershop_id', $barbershop->id)
+        $appointments = Appointment::where('barbershop_id', $barbershop->id)
             ->where('appointment_date', $selectedDate->format('Y-m-d'))
             ->whereIn('status', ['pending', 'accepted'])
             ->with('client', 'service')
@@ -337,7 +350,7 @@ class AppointmentController extends Controller
                     $slotEnd = $end->copy();
                 }
 
-                $slotAppointments = $appointments->filter(function (Appointments $appointment) use ($selectedDate, $current, $slotEnd) {
+                $slotAppointments = $appointments->filter(function (Appointment $appointment) use ($selectedDate, $current, $slotEnd) {
                     $appointmentStart = $selectedDate->copy()->setTimeFromTimeString(
                         $appointment->start_time instanceof Carbon ? $appointment->start_time->format('H:i:s') : (string) $appointment->start_time
                     );
@@ -373,7 +386,7 @@ class AppointmentController extends Controller
         ));
     }
 
-    public function updateStatus(Request $request, Appointments $appointment)
+    public function updateStatus(Request $request, Appointment $appointment)
     {
         $barbershop = Auth::user()->barbershop;
         if (!$barbershop || $appointment->barbershop_id != $barbershop->id) {
@@ -398,24 +411,20 @@ class AppointmentController extends Controller
         return redirect()->back()->with('success', 'Estado de la cita actualizado.');
     }
 
-    public function cancel(Appointments $appointment)
+    public function cancel(Appointment $appointment)
     {
         if ($appointment->client_id !== Auth::id()) {
             abort(403);
         }
 
         if ($appointment->status !== 'pending') {
-            return redirect()
-                ->back()
-                ->with('error', 'Solo puedes cancelar citas que estén pendientes.');
+            return redirect()->back()->with('error', 'Solo puedes cancelar citas pendientes.');
         }
 
         $appointment->update([
             'status' => 'cancelled',
         ]);
 
-        return redirect()
-            ->back()
-            ->with('success', 'La cita ha sido cancelada correctamente.');
+        return redirect()->back()->with('success', 'Cita cancelada correctamente.');
     }
 }

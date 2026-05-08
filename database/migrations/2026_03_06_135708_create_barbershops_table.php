@@ -15,9 +15,12 @@ return new class extends Migration
             $table->id();
             $table->foreignId('barber_id')->constrained('users');
             $table->string('name')->unique();
-            $table->text('Description');
             $table->string('address');
             $table->string('phone');
+            $table->unsignedSmallInteger('slot_interval_minutes')->default(60);
+            $table->string('visibility')->default('public');
+            $table->string('image_path')->nullable();
+            $table->json('image_paths')->nullable();
             $table->timestamps();
         });
     }

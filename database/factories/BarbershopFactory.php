@@ -3,8 +3,8 @@
 namespace Database\Factories;
 
 use App\Models\Barbershop;
-use App\Models\Schedules;
-use App\Models\Services;
+use App\Models\Schedule;
+use App\Models\Service;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -33,13 +33,6 @@ class BarbershopFactory extends Factory
         return [
             'barber_id' => User::factory()->barber(),
             'name' => sprintf('%s Barber %s', $nameBase, $district),
-            'Description' => fake()->randomElement([
-                'Cortes modernos con atencion cercana.',
-                'Especialistas en fades, barba y acabados limpios.',
-                'Barberia urbana con servicios rapidos y precisos.',
-                'Ambiente cuidado y estilo actual para todos los dias.',
-                'Cortes clasicos y modernos con trato profesional.',
-            ]),
             'address' => sprintf('%s %s, %s', fake()->streetName(), fake()->buildingNumber(), $city),
             'phone' => fake()->numerify('6########'),
             'slot_interval_minutes' => 60,
@@ -60,7 +53,7 @@ class BarbershopFactory extends Factory
         $services = fake()->randomElements($this->serviceCatalog(), 3);
 
         foreach ($services as $service) {
-            Services::factory()->create([
+            Service::factory()->create([
                 'barbershop_id' => $barbershop->id,
                 'name' => $service['name'],
                 'description' => $service['description'],
@@ -79,7 +72,7 @@ class BarbershopFactory extends Factory
         ]);
 
         foreach ($days as $day) {
-            Schedules::factory()
+            Schedule::factory()
                 ->weekday($day)
                 ->create([
                     'barbershop_id' => $barbershop->id,

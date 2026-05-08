@@ -2,9 +2,9 @@
 
 namespace App\Services;
 
-use App\Models\Appointments;
+use App\Models\Appointment;
 use App\Models\Barbershop;
-use App\Models\Services;
+use App\Models\Service;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -14,14 +14,14 @@ class AppointmentSelectionService
 {
     private const BLOCKING_STATUSES = ['pending', 'accepted'];
 
-    public function getSlotsForService(Barbershop $barbershop, Carbon $date, $schedule, Services $service): array
+    public function getSlotsForService(Barbershop $barbershop, Carbon $date, $schedule, Service $service): array
     {
         $start = $date->copy()->setTimeFromTimeString($schedule->start_time);
         $end = $date->copy()->setTimeFromTimeString($schedule->end_time);
         $slotInterval = $this->slotIntervalMinutes($barbershop);
 
         $slots = [];
-        $existingAppointments = Appointments::where('barbershop_id', $barbershop->id)
+        $existingAppointments = Appointment::where('barbershop_id', $barbershop->id)
             ->where('appointment_date', $date->format('Y-m-d'))
             ->whereIn('status', self::BLOCKING_STATUSES)
             ->get(['start_time', 'end_time']);
@@ -62,7 +62,7 @@ class AppointmentSelectionService
         return $slots;
     }
 
-    public function getAvailableSlotsForService(Barbershop $barbershop, Carbon $date, $schedule, Services $service): array
+    public function getAvailableSlotsForService(Barbershop $barbershop, Carbon $date, $schedule, Service $service): array
     {
         return collect($this->getSlotsForService($barbershop, $date, $schedule, $service))
             ->filter(fn (array $slot) => $slot['available'])
@@ -70,7 +70,7 @@ class AppointmentSelectionService
             ->all();
     }
 
-    public function getSlotsForServiceInSchedules(Barbershop $barbershop, Carbon $date, iterable $schedules, Services $service): array
+    public function getSlotsForServiceInSchedules(Barbershop $barbershop, Carbon $date, iterable $schedules, Service $service): array
     {
         return collect($schedules)
             ->sortBy('start_time')
@@ -81,7 +81,7 @@ class AppointmentSelectionService
             ->all();
     }
 
-    public function getAvailableSlotsForServiceInSchedules(Barbershop $barbershop, Carbon $date, iterable $schedules, Services $service): array
+    public function getAvailableSlotsForServiceInSchedules(Barbershop $barbershop, Carbon $date, iterable $schedules, Service $service): array
     {
         return collect($this->getSlotsForServiceInSchedules($barbershop, $date, $schedules, $service))
             ->filter(fn (array $slot) => $slot['available'])
@@ -104,7 +104,7 @@ class AppointmentSelectionService
             'datetime' => 'required|date_format:Y-m-d H:i',
         ], $extraRules))->validate();
 
-        $service = Services::where('id', $validated['service_id'])
+        $service = Service::where('id', $validated['service_id'])
             ->where('barbershop_id', $barbershop->id)
             ->first();
 
@@ -137,7 +137,7 @@ class AppointmentSelectionService
         ];
     }
 
-    public function isSelectableSlot(Barbershop $barbershop, Services $service, Carbon $startTime): bool
+    public function isSelectableSlot(Barbershop $barbershop, Service $service, Carbon $startTime): bool
     {
         $bookingWindowStart = Carbon::today();
         $bookingWindowEnd = $bookingWindowStart->copy()->addMonthNoOverflow()->endOfMonth();
@@ -164,7 +164,7 @@ class AppointmentSelectionService
 
     public function isSlotAvailable(Barbershop $barbershop, Carbon $startTime, Carbon $endTime): bool
     {
-        return !Appointments::where('barbershop_id', $barbershop->id)
+        return !Appointment::where('barbershop_id', $barbershop->id)
             ->where('appointment_date', $startTime->format('Y-m-d'))
             ->whereIn('status', self::BLOCKING_STATUSES)
             ->where('start_time', '<', $endTime->format('H:i:s'))
@@ -174,7 +174,7 @@ class AppointmentSelectionService
 
     public function clientHasAppointmentOnDate(int $clientId, Carbon $date): bool
     {
-        return Appointments::where('client_id', $clientId)
+        return Appointment::where('client_id', $clientId)
             ->where('appointment_date', $date->format('Y-m-d'))
             ->whereIn('status', self::BLOCKING_STATUSES)
             ->exists();
