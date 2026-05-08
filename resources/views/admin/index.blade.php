@@ -48,6 +48,19 @@
                 </div>
             </div>
         </section>
+         <section class="eb-panel p-8">
+            <h2 class="mt-2 text-3xl font-black text-gray-900">Copia de seguridad</h2>
+            <div class="mt-6 space-y-4">
+                <div>
+                    <p class="text-gray-600">Descarga una copia de seguridad completa de la base de datos y archivos del sistema.</p>
+                    <a href="{{ route('admin.backup') }}" class="eb-button mt-4 px-6 py-3">Descargar copia completa</a>
+                </div>
+                <div>
+                    <p class="text-gray-600">O descarga solo la base de datos en formato SQL.</p>
+                    <a href="{{ route('admin.backup.database') }}" class="eb-button mt-4 px-6 py-3 bg-blue-600 hover:bg-blue-700">Descargar base de datos</a>
+                </div>
+            </div>
+        </section>
     </div>
 </div>
 @endsection

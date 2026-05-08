@@ -96,6 +96,8 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::patch('/users/{user}/ban', [AdminController::class, 'usersBan'])->name('users.ban');
     Route::patch('/users/{user}/unban', [AdminController::class, 'usersUnban'])->name('users.unban');
     Route::delete('/users/{user}', [AdminController::class, 'usersDestroy'])->name('users.destroy');
+
+    Route::get('/backups', [AdminController::class, 'backup'])->name('backup');
 });
 
 require __DIR__.'/auth.php';

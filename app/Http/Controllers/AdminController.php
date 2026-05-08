@@ -257,4 +257,180 @@ class AdminController extends Controller
 
         DB::table('sessions')->where('user_id', $user->id)->delete();
     }
+
+   public function backup()
+    {
+        $this->ensureAdmin();
+
+        try {
+            $backupDir = storage_path('app/backups');
+            if (!is_dir($backupDir)) {
+                mkdir($backupDir, 0755, true);
+            }
+
+            $timestamp = now()->format('Y-m-d_H-i-s');
+            $backupFileName = "backup_{$timestamp}.zip";
+            $backupPath = "$backupDir/$backupFileName";
+
+            $zip = new \ZipArchive();
+            if ($zip->open($backupPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
+                throw new \Exception('No se pudo crear el archivo ZIP');
+            }
+
+            // Agregar base de datos
+            $this->addDatabaseToZip($zip, $backupDir);
+
+            // Agregar archivos importantes del proyecto
+            $this->addProjectFilesToZip($zip);
+
+            $zip->close();
+
+            return response()->download($backupPath, $backupFileName)->deleteFileAfterSend(true);
+        } catch (\Exception $e) {
+            return redirect()->route('admin.dashboard')
+                ->with('error', 'Error al crear la copia de seguridad: ' . $e->getMessage());
+        }
+    }
+
+    public function backupDatabase()
+    {
+        $this->ensureAdmin();
+
+        try {
+            $backupDir = storage_path('app/backups');
+            if (!is_dir($backupDir)) {
+                mkdir($backupDir, 0755, true);
+            }
+
+            $timestamp = now()->format('Y-m-d_H-i-s');
+            $backupFileName = "backup_database_{$timestamp}.sql";
+            $backupPath = "$backupDir/$backupFileName";
+
+            $dbPath = config('database.connections.mysql.database');
+            $dbUser = config('database.connections.mysql.username');
+            $dbPassword = config('database.connections.mysql.password');
+            $dbHost = config('database.connections.mysql.host');
+
+            // Usar mysqldump para crear el dump
+            $command = sprintf(
+                'mysqldump -h %s -u %s %s',
+                escapeshellarg($dbHost),
+                escapeshellarg($dbUser),
+                escapeshellarg($dbPath)
+            );
+
+            if (!empty($dbPassword)) {
+                $command = sprintf(
+                    'mysqldump -h %s -u %s -p%s %s',
+                    escapeshellarg($dbHost),
+                    escapeshellarg($dbUser),
+                    escapeshellarg($dbPassword),
+                    escapeshellarg($dbPath)
+                );
+            }
+
+            $command .= " > " . escapeshellarg($backupPath);
+
+            $output = null;
+            $returnVar = null;
+            @exec($command, $output, $returnVar);
+
+            if (!file_exists($backupPath) || filesize($backupPath) === 0) {
+                throw new \Exception('No se pudo crear el dump de la base de datos');
+            }
+
+            return response()->download($backupPath, $backupFileName)->deleteFileAfterSend(true);
+        } catch (\Exception $e) {
+            return redirect()->route('admin.dashboard')
+                ->with('error', 'Error al crear el backup de la base de datos: ' . $e->getMessage());
+        }
+    }
+
+    private function addDatabaseToZip(\ZipArchive $zip, string $backupDir): void
+    {
+        $dbPath = config('database.connections.mysql.database');
+        $dbUser = config('database.connections.mysql.username');
+        $dbPassword = config('database.connections.mysql.password');
+        $dbHost = config('database.connections.mysql.host');
+
+        $dumpFile = "$backupDir/database_dump.sql";
+
+        // Usar mysqldump si está disponible
+        $command = sprintf(
+            'mysqldump -h %s -u %s %s',
+            escapeshellarg($dbHost),
+            escapeshellarg($dbUser),
+            escapeshellarg($dbPath)
+        );
+
+        if (!empty($dbPassword)) {
+            $command = sprintf(
+                'mysqldump -h %s -u %s -p%s %s',
+                escapeshellarg($dbHost),
+                escapeshellarg($dbUser),
+                escapeshellarg($dbPassword),
+                escapeshellarg($dbPath)
+            );
+        }
+
+        $command .= " > " . escapeshellarg($dumpFile);
+
+        $output = null;
+        $returnVar = null;
+        @exec($command, $output, $returnVar);
+
+        if (file_exists($dumpFile)) {
+            $zip->addFile($dumpFile, 'database_dump.sql');
+        }
+    }
+
+    private function addProjectFilesToZip(\ZipArchive $zip): void
+    {
+        $projectRoot = base_path();
+        $filesToBackup = [
+            'app',
+            'config',
+            'database/migrations',
+            'database/seeders',
+            'routes',
+            'resources/views',
+            'resources/js',
+            'resources/css',
+            '.env',
+            'composer.json',
+            'package.json',
+        ];
+
+        foreach ($filesToBackup as $fileOrDir) {
+            $fullPath = "$projectRoot/$fileOrDir";
+
+            if (is_file($fullPath)) {
+                $zip->addFile($fullPath, $fileOrDir);
+            } elseif (is_dir($fullPath)) {
+                $this->addDirToZip($zip, $fullPath, $fileOrDir);
+            }
+        }
+
+        // Agregar imágenes públicas
+        $publicImagesPath = "$projectRoot/storage/app/public";
+        if (is_dir($publicImagesPath)) {
+            $this->addDirToZip($zip, $publicImagesPath, 'storage/app/public');
+        }
+    }
+
+    private function addDirToZip(\ZipArchive $zip, string $dir, string $zipPath): void
+    {
+        $files = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($dir, \RecursiveDirectoryIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::SELF_FIRST
+        );
+
+        foreach ($files as $file) {
+            if ($file->isFile()) {
+                $filePath = $file->getRealPath();
+                $relativePath = $zipPath . '/' . substr($filePath, strlen($dir) + 1);
+                $zip->addFile($filePath, str_replace('\\', '/', $relativePath));
+            }
+        }
+    }
 }
