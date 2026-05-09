@@ -98,6 +98,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::delete('/users/{user}', [AdminController::class, 'usersDestroy'])->name('users.destroy');
 
     Route::get('/backups', [AdminController::class, 'backup'])->name('backup');
+    Route::get('/backups/database', [AdminController::class, 'backupDatabase'])->name('backup.database');
 });
 
 require __DIR__.'/auth.php';
