@@ -51,6 +51,7 @@
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hora</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Comentario</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Codigo</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
                     </tr>
                 </thead>
@@ -90,13 +91,22 @@
                                 @else {{ $appointment->status }} @endif
                             </span>
                         </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            @if($appointment->status === 'accepted')
+                                <span class="rounded-lg bg-gray-100 px-3 py-2 font-mono font-bold tracking-wider text-gray-900">
+                                    {{ $appointment->confirmation_code }}
+                                </span>
+                            @else
+                                <span class="text-gray-400">-</span>
+                            @endif
+                        </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <a href="{{ route('appointments.show', $appointment) }}" class="text-violet-700 hover:text-violet-900">Ver detalles</a>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7" class="px-6 py-4 text-center text-gray-500">
+                        <td colspan="8" class="px-6 py-4 text-center text-gray-500">
                             No hay citas {{ $selectedStatus ? strtolower($statusOptions[$selectedStatus]) : 'programadas' }}.
                         </td>
                     </tr>

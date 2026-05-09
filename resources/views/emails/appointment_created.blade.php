@@ -1,4 +1,4 @@
-@extends('layouts.email');
+@extends('layouts.email')
 
 @section('title', 'Nueva solitiud de cita')
 @section('header_color', '#4F46E5')

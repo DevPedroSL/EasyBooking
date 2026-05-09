@@ -12,31 +12,31 @@ use Illuminate\Support\Str;
 class UserFactory extends Factory
 {
     /**
-     * The current password being used by the factory.
+     * La contrasena actual usada por el factory.
      */
     protected static ?string $password;
 
     /**
-     * Define the model's default state.
+     * Define el estado por defecto del modelo.
      *
      * @return array<string, mixed>
      */
     public function definition(): array
     {
         return [
-            'name' => fake()->name(),
+            'name' => fake()->randomElement($this->spanishNames()) . ' ' . fake()->randomElement($this->spanishSurnames()),
             'email' => fake()->unique()->safeEmail(),
             'phone' => fake()->numerify('6########'),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
             'role' => fake()->randomElement(['admin', 'barber', 'customer']),
-            'barbershop_id' => null, // Will be set in seeder or state
+            'barbershop_id' => null,
         ];
     }
 
     /**
-     * Indicate that the model's email address should be unverified.
+     * Indica que el email del usuario no esta verificado.
      */
     public function unverified(): static
     {
@@ -64,5 +64,23 @@ class UserFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'role' => 'customer',
         ]);
+    }
+
+    private function spanishNames(): array
+    {
+        return [
+            'Alejandro', 'Lucia', 'Daniel', 'Sofia', 'Hugo', 'Martina', 'Pablo', 'Valeria', 'Adrian', 'Paula',
+            'Javier', 'Carmen', 'Diego', 'Claudia', 'Marcos', 'Alba', 'Mario', 'Nerea', 'Sergio', 'Irene',
+            'Manuel', 'Laura', 'Ruben', 'Marta', 'Carlos', 'Elena', 'Ivan', 'Sara', 'Miguel', 'Noelia',
+        ];
+    }
+
+    private function spanishSurnames(): array
+    {
+        return [
+            'Garcia', 'Martinez', 'Lopez', 'Sanchez', 'Perez', 'Gomez', 'Martin', 'Jimenez', 'Ruiz', 'Hernandez',
+            'Diaz', 'Moreno', 'Alvarez', 'Romero', 'Navarro', 'Torres', 'Dominguez', 'Vazquez', 'Ramos', 'Gil',
+            'Serrano', 'Molina', 'Blanco', 'Castro', 'Ortega', 'Delgado', 'Rubio', 'Marin', 'Iglesias', 'Medina',
+        ];
     }
 }

@@ -109,6 +109,7 @@ class AppointmentStatusTest extends TestCase
         $rejectedClient = User::factory()->customer()->create(['name' => 'Cliente Rechazado']);
 
         Appointment::factory()->create([
+            'id' => 9001,
             'client_id' => $acceptedClient->id,
             'barbershop_id' => $barbershop->id,
             'service_id' => $service->id,
@@ -134,8 +135,23 @@ class AppointmentStatusTest extends TestCase
             ->assertOk()
             ->assertSee('Cliente Aceptado')
             ->assertSee('Aceptada')
+            ->assertSee(Appointment::find(9001)->confirmation_code)
             ->assertDontSee($pendingAppointment->client->name)
             ->assertDontSee('Cliente Rechazado');
+    }
+
+    public function test_barber_can_see_confirmation_code_on_accepted_appointment_details(): void
+    {
+        [$barber, $appointment] = $this->createPendingAppointmentForBarber([
+            'status' => 'accepted',
+        ]);
+
+        $this
+            ->actingAs($barber)
+            ->get(route('appointments.show', $appointment))
+            ->assertOk()
+            ->assertSee('Codigo de confirmacion')
+            ->assertSee($appointment->confirmation_code);
     }
 
     public function test_barber_can_manage_pending_appointment_from_details_page(): void
@@ -197,6 +213,27 @@ class AppointmentStatusTest extends TestCase
             ->assertOk()
             ->assertSee('Comentario de la barbería')
             ->assertSee('Tu cita esta confirmada. Te esperamos cinco minutos antes.');
+    }
+
+    public function test_client_can_see_confirmation_code_on_accepted_appointment(): void
+    {
+        [, $appointment, $client] = $this->createPendingAppointmentForBarber([
+            'status' => 'accepted',
+        ]);
+
+        $this
+            ->actingAs($client)
+            ->get(route('appointments.my'))
+            ->assertOk()
+            ->assertSee('Codigo de confirmacion')
+            ->assertSee($appointment->confirmation_code);
+
+        $this
+            ->actingAs($client)
+            ->get(route('appointments.show', $appointment))
+            ->assertOk()
+            ->assertSee('Codigo de confirmacion')
+            ->assertSee($appointment->confirmation_code);
     }
 
     private function createPendingAppointmentForBarber(array $appointmentOverrides = []): array

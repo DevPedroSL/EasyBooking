@@ -1,4 +1,4 @@
-@extends('layouts.email');
+@extends('layouts.email')
 
 @section('title', 'Cita aceptada')
 @section('header_color', '#10B981')
@@ -18,10 +18,10 @@
             <p><strong>Fecha:</strong> {{ \Carbon\Carbon::parse($appointment->appointment_date)->format('d/m/Y') }}</p>
             <p><strong>Hora:</strong> {{ $appointment->start_time->format('H:i') }} - {{ $appointment->end_time->format('H:i') }}</p>
             @if($appointment->client_comment)
-            <p><strong>Tu comentario:</strong> {{ $appointment->client_comment }}</p>
+                <p><strong>Tu comentario:</strong> {{ $appointment->client_comment }}</p>
             @endif
             @if($appointment->barber_comment)
-            <p><strong>Comentario del barbero:</strong> {{ $appointment->barber_comment }}</p>
+                <p><strong>Comentario del barbero:</strong> {{ $appointment->barber_comment }}</p>
             @endif
         </div>
 

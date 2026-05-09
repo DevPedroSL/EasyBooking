@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class Appointment extends Model
 {
     use HasFactory;
+
     protected $fillable = [
         'client_id',
         'barbershop_id',
@@ -44,5 +45,12 @@ class Appointment extends Model
     public function service()
     {
         return $this->belongsTo(Service::class, 'service_id');
+    }
+
+    public function getConfirmationCodeAttribute(): string
+    {
+        $secret = config('app.key') ?: config('app.name', 'EasyBooking');
+
+        return strtoupper(substr(hash_hmac('sha256', (string) $this->id, $secret), 0, 8));
     }
 }

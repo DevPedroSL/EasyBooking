@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 class ServiceFactory extends Factory
 {
     /**
-     * Define the model's default state.
+     * Define el estado por defecto del modelo.
      *
      * @return array<string, mixed>
      */
@@ -34,7 +34,7 @@ class ServiceFactory extends Factory
     {
         return [
             ['name' => 'Corte clasico', 'description' => 'Corte limpio para el dia a dia.', 'duration' => 30, 'price' => 15.00],
-            ['name' => 'Skin fade', 'description' => 'Degradado marcado con acabado moderno.', 'duration' => 35, 'price' => 18.00],
+            ['name' => 'Degradado', 'description' => 'Degradado marcado con acabado moderno.', 'duration' => 35, 'price' => 18.00],
             ['name' => 'Arreglo de barba', 'description' => 'Recorte y perfilado de barba.', 'duration' => 20, 'price' => 10.00],
             ['name' => 'Corte y barba', 'description' => 'Servicio combinado para renovar tu look.', 'duration' => 50, 'price' => 24.00],
             ['name' => 'Lavado y peinado', 'description' => 'Lavado rapido con peinado final.', 'duration' => 15, 'price' => 7.00],

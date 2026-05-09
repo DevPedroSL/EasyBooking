@@ -1,4 +1,4 @@
-@extends('layouts.email');
+@extends('layouts.email')
 
 @section('title', 'Solicitud de barberia rechazada')
 @section('header_color', '#EF4444')

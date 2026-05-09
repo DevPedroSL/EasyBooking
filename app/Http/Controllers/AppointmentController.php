@@ -6,6 +6,7 @@ use App\Models\Appointment;
 use App\Models\Barbershop;
 use App\Models\Service;
 use App\Services\AppointmentSelectionService;
+use App\Services\AppointmentPdfService;
 use App\Mail\AppointmentAccepted;
 use App\Mail\AppointmentCreated;
 use App\Mail\AppointmentRejected;
@@ -196,7 +197,7 @@ class AppointmentController extends Controller
 
         Mail::to($barbershop->barber->email)->send(new AppointmentCreated($appointment));
 
-        return redirect()->route('appointments.my')->with('success', 'Cita reservada exitosamente.');
+        return redirect()->route('appointments.my')->with('success', 'Cita reservada exitosamente. Podras descargar el PDF cuando la barberia la acepte.');
     }
 
     public function show(Appointment $appointment)
@@ -213,6 +214,27 @@ class AppointmentController extends Controller
         }
 
         return view('appointments.show', compact('appointment'));
+    }
+
+    public function pdf(Appointment $appointment, AppointmentPdfService $appointmentPdfService)
+    {
+        $appointment->load('client', 'service', 'barbershop');
+
+        $user = Auth::user();
+        $userBarbershop = $user->barbershop;
+        $canViewAsBarber = $userBarbershop && $appointment->barbershop_id === $userBarbershop->id;
+        $canViewAsClient = $appointment->client_id === $user->id;
+        $canViewAsAdmin = $user->role === 'admin';
+
+        abort_unless($appointment->status === 'accepted', 403);
+        abort_unless($canViewAsBarber || $canViewAsClient || $canViewAsAdmin, 403);
+
+        $filename = 'cita-' . $appointment->id . '.pdf';
+
+        return response($appointmentPdfService->render($appointment), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
     }
 
     public function my()

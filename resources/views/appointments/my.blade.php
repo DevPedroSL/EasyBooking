@@ -25,7 +25,7 @@
   <div class="space-y-4">
     @forelse($appointments as $appointment)
       <div class="eb-card">
-        <div class="flex justify-between items-start">
+        <div class="grid gap-4 md:grid-cols-[1fr_auto_auto] md:items-start">
           <div>
             <h3 class="text-xl font-semibold text-gray-800">{{ $appointment->barbershop->name }}</h3>
             <p class="text-gray-600">{{ $appointment->service->name }}</p>
@@ -41,7 +41,16 @@
               <p class="mt-2 text-sm font-medium {{ $appointment->status === 'rejected' ? 'text-red-700' : 'text-violet-700' }}">Comentario de la barbería: {{ \Illuminate\Support\Str::limit($barberComment, 80) }}</p>
             @endif
           </div>
-          <div class="flex flex-col items-end gap-3 text-right">
+          <div class="flex justify-start md:justify-center">
+            @if($appointment->status === 'accepted')
+              <div class="inline-flex flex-col rounded-lg bg-gray-100 px-4 py-3 text-left">
+                <span class="text-xs font-bold uppercase tracking-wide text-gray-500">Codigo de confirmacion</span>
+                <span class="mt-1 font-mono text-lg text-center font-black tracking-wider text-gray-900">{{ $appointment->confirmation_code }}</span>
+              </div>
+            @endif
+          </div>
+
+          <div class="flex flex-col items-start gap-3 text-left md:items-end md:text-right">
             <span class="px-3 py-1 rounded-full text-sm font-medium
               @if($appointment->status == 'pending') bg-yellow-100 text-yellow-800
               @elseif($appointment->status == 'accepted') bg-violet-100 text-violet-800
@@ -49,8 +58,11 @@
               @else bg-red-100 text-red-800 @endif">
               {{ ucfirst($appointment->status) }}
             </span>
-            <div class="flex flex-wrap items-center justify-end gap-3">
+            <div class="flex flex-wrap items-center justify-start gap-3 md:justify-end">
               <a href="{{ route('appointments.show', $appointment) }}" class="inline-flex min-h-9 items-center justify-center rounded-lg border border-violet-200 px-4 py-2 text-sm font-bold text-violet-700 transition hover:bg-violet-50 hover:text-violet-900">Ver detalles</a>
+              @if($appointment->status === 'accepted')
+                <a href="{{ route('appointments.pdf', $appointment) }}" class="inline-flex min-h-9 items-center justify-center rounded-lg border border-gray-300 px-4 py-2 text-sm font-bold text-gray-700 transition hover:bg-gray-100">Descargar PDF</a>
+              @endif
               @if($appointment->status === 'pending')
                 <form
                   method="POST"

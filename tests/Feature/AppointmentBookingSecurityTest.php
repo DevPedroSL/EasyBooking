@@ -72,12 +72,90 @@ class AppointmentBookingSecurityTest extends TestCase
                     'datetime' => '2026-05-06 11:00',
                 ])
                 ->assertSessionHasNoErrors()
-                ->assertRedirect(route('appointments.my'));
+                ->assertRedirect(route('appointments.my'))
+                ->assertSessionHas('success');
 
             $this->assertSame(2, Appointment::where('client_id', $client->id)->where('appointment_date', '2026-05-06')->count());
         } finally {
             Carbon::setTestNow();
         }
+    }
+
+    public function test_client_can_download_appointment_pdf(): void
+    {
+        $client = User::factory()->customer()->create();
+        $barbershop = Barbershop::factory()->create([
+            'name' => 'Barberia PDF',
+            'address' => 'Calle PDF 10',
+            'phone' => '612345678',
+        ]);
+        $service = Service::factory()->create([
+            'barbershop_id' => $barbershop->id,
+            'name' => 'Corte PDF',
+            'duration' => 30,
+            'price' => 12.50,
+        ]);
+        $appointment = Appointment::factory()->create([
+            'client_id' => $client->id,
+            'barbershop_id' => $barbershop->id,
+            'service_id' => $service->id,
+            'appointment_date' => '2026-05-06',
+            'start_time' => '11:00:00',
+            'end_time' => '11:30:00',
+            'status' => 'accepted',
+        ]);
+
+        $response = $this
+            ->actingAs($client)
+            ->get(route('appointments.pdf', $appointment));
+
+        $response
+            ->assertOk()
+            ->assertHeader('Content-Type', 'application/pdf')
+            ->assertHeader('Content-Disposition', 'attachment; filename="cita-' . $appointment->id . '.pdf"');
+
+        $this->assertStringStartsWith('%PDF-1.4', $response->getContent());
+        $this->assertStringContainsString('Cita aceptada #' . $appointment->id, $response->getContent());
+    }
+
+    public function test_other_client_cannot_download_appointment_pdf(): void
+    {
+        $client = User::factory()->customer()->create();
+        $otherClient = User::factory()->customer()->create();
+        $barbershop = Barbershop::factory()->create();
+        $service = Service::factory()->create([
+            'barbershop_id' => $barbershop->id,
+        ]);
+        $appointment = Appointment::factory()->create([
+            'client_id' => $client->id,
+            'barbershop_id' => $barbershop->id,
+            'service_id' => $service->id,
+        ]);
+
+        $this
+            ->actingAs($otherClient)
+            ->get(route('appointments.pdf', $appointment))
+            ->assertForbidden();
+    }
+
+    public function test_client_cannot_download_pdf_for_pending_appointment(): void
+    {
+        $client = User::factory()->customer()->create();
+        $barbershop = Barbershop::factory()->create();
+        $service = Service::factory()->create([
+            'barbershop_id' => $barbershop->id,
+        ]);
+        $appointment = Appointment::factory()->create([
+            'client_id' => $client->id,
+            'barbershop_id' => $barbershop->id,
+            'service_id' => $service->id,
+            'status' => 'pending',
+        ]);
+
+        $this
+            ->actingAs($client)
+            ->get(route('appointments.pdf', $appointment))
+            ->assertForbidden();
     }
 
     private function createBookableScenarioWithExistingAppointment(string $existingStatus): array

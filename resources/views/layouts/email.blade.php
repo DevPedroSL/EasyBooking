@@ -1,14 +1,12 @@
 <head>
     <title>@yield('title', 'EasyBooking')</title> 
     <style>
-        /* Usamos el yield con el color por defecto directamente en el CSS */
         .header { 
             background-color: @yield('header_color', '#4F46E5'); 
             color: white; 
             padding: 20px; 
             text-align: center; 
         }
-        /* ... resto de estilos ... */
     </style>
 </head>
 <body>

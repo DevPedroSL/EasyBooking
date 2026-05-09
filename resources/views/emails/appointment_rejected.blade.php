@@ -1,4 +1,4 @@
-@extends('layouts.email');
+@extends('layouts.email')
 
 @section('title', 'Cita rechazada')
 @section('header_color', '#EF4444')
@@ -20,10 +20,10 @@
             <p><strong>Fecha solicitada:</strong> {{ \Carbon\Carbon::parse($appointment->appointment_date)->format('d/m/Y') }}</p>
             <p><strong>Hora solicitada:</strong> {{ $appointment->start_time->format('H:i') }} - {{ $appointment->end_time->format('H:i') }}</p>
             @if($appointment->client_comment)
-            <p><strong>Tu comentario:</strong> {{ $appointment->client_comment }}</p>
+                <p><strong>Tu comentario:</strong> {{ $appointment->client_comment }}</p>
             @endif
             @if($appointment->rejection_reason)
-            <p><strong>Motivo del rechazo:</strong> {{ $appointment->rejection_reason }}</p>
+                <p><strong>Motivo del rechazo:</strong> {{ $appointment->rejection_reason }}</p>
             @endif
         </div>
 

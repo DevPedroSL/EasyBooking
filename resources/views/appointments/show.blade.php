@@ -29,6 +29,7 @@
     @endif
 
     @php($canManageAsBarber = auth()->user()->barbershop && auth()->user()->barbershop->id === $appointment->barbershop_id)
+    @php($canViewAsClient = $appointment->client_id === auth()->id())
     @php($barberComment = $appointment->barber_comment ?: $appointment->rejection_reason)
 
     <div class="eb-panel p-8">
@@ -57,6 +58,15 @@
                     {{ \Carbon\Carbon::parse($appointment->start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($appointment->end_time)->format('H:i') }}
                 </p>
             </div>
+
+            @if(($canManageAsBarber || $canViewAsClient) && $appointment->status === 'accepted')
+                <div>
+                    <p class="text-sm font-bold text-gray-500 uppercase">Codigo de confirmacion</p>
+                    <p class="mt-2 inline-flex rounded-lg bg-gray-100 px-4 py-3 font-mono text-xl font-black tracking-wider text-gray-900">
+                        {{ $appointment->confirmation_code }}
+                    </p>
+                </div>
+            @endif
         </div>
 
         <div class="mt-8 border-t border-gray-200 pt-6">
@@ -112,6 +122,12 @@
         @endif
 
         <div class="mt-8 flex flex-wrap justify-end gap-3">
+            @if($appointment->status === 'accepted')
+                <a href="{{ route('appointments.pdf', $appointment) }}" class="inline-flex min-h-10 items-center justify-center rounded-lg border border-gray-300 px-5 py-3 font-bold text-gray-700 transition hover:bg-gray-100">
+                    Descargar PDF
+                </a>
+            @endif
+
             @if($appointment->client_id === auth()->id() && $appointment->status === 'pending')
                 <form
                     method="POST"

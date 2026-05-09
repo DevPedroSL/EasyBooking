@@ -44,6 +44,7 @@ Route::post('/barbershop/{barbershop}/appointments', [AppointmentController::cla
 Route::get('/my-appointments', [AppointmentController::class, 'my'])->name('appointments.my')->middleware('auth');
 Route::get('/barber/appointments', [AppointmentController::class, 'barberAppointments'])->name('appointments.barber')->middleware('auth');
 Route::get('/barber/agenda', [AppointmentController::class, 'barberAgenda'])->name('appointments.agenda')->middleware('auth');
+Route::get('/appointments/{appointment}/pdf', [AppointmentController::class, 'pdf'])->name('appointments.pdf')->middleware('auth');
 Route::get('/appointments/{appointment}', [AppointmentController::class, 'show'])->name('appointments.show')->middleware('auth');
 Route::patch('/appointments/{appointment}/cancel', [AppointmentController::class, 'cancel'])->name('appointments.cancel')->middleware('auth');
 Route::patch('/appointments/{appointment}/status', [AppointmentController::class, 'updateStatus'])->name('appointments.updateStatus')->middleware('auth');
