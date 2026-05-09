@@ -13,7 +13,10 @@
     <div class="space-y-6">
         <section class="eb-panel p-8">
             <h2 class="mt-2 text-3xl font-black text-gray-900">Barberías</h2>
-            <a href="{{ route('admin.barbershops.index') }}" class="eb-button mt-6 px-6 py-3">Gestionar barberías</a>
+            <div class="mt-6 flex flex-wrap gap-3">
+                <a href="{{ route('admin.barbershops.index') }}" class="eb-button px-6 py-3">Gestionar barberías</a>
+                <a href="{{ route('admin.barbershop-requests.index') }}" class="eb-button px-6 py-3">Solicitudes pendientes ({{ $pendingBarbershopRequestsCount }})</a>
+            </div>
         </section>
 
         <section class="eb-panel p-8">
@@ -45,6 +48,11 @@
                 <div class="eb-card">
                     <p class="text-sm font-bold uppercase tracking-wide text-gray-500">Clientes</p>
                     <p class="mt-3 text-4xl font-black text-gray-900">{{ $customersCount }}</p>
+                </div>
+
+                <div class="eb-card">
+                    <p class="text-sm font-bold uppercase tracking-wide text-gray-500">Solicitudes pendientes</p>
+                    <p class="mt-3 text-4xl font-black text-gray-900">{{ $pendingBarbershopRequestsCount }}</p>
                 </div>
             </div>
         </section>

@@ -67,6 +67,9 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/crear-barberia', [BarbershopController::class, 'createRequest'])->name('barbershop-requests.create');
+    Route::post('/crear-barberia', [BarbershopController::class, 'storeRequest'])->name('barbershop-requests.store');
+
     // User barbershop routes
     Route::get('/my-barbershop', [BarbershopController::class, 'dashboard'])->name('barbershops.dashboard');
     Route::get('/my-barbershop/edit', [BarbershopController::class, 'editMy'])->name('barbershops.editMy');
@@ -89,6 +92,10 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::get('/barbershops/{barbershop}/edit', [AdminController::class, 'barbershopsEdit'])->name('barbershops.edit');
     Route::patch('/barbershops/{barbershop}', [AdminController::class, 'barbershopsUpdate'])->name('barbershops.update');
     Route::delete('/barbershops/{barbershop}', [AdminController::class, 'barbershopsDestroy'])->name('barbershops.destroy');
+
+    Route::get('/barbershop-requests', [AdminController::class, 'barbershopRequestsIndex'])->name('barbershop-requests.index');
+    Route::patch('/barbershop-requests/{barbershopRequest}/approve', [AdminController::class, 'barbershopRequestsApprove'])->name('barbershop-requests.approve');
+    Route::patch('/barbershop-requests/{barbershopRequest}/reject', [AdminController::class, 'barbershopRequestsReject'])->name('barbershop-requests.reject');
 
     Route::get('/users', [AdminController::class, 'usersIndex'])->name('users.index');
     Route::get('/users/{user}/edit', [AdminController::class, 'usersEdit'])->name('users.edit');

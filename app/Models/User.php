@@ -61,6 +61,11 @@ class User extends Authenticatable
         return $this->hasOne(Barbershop::class, 'barber_id');
     }
 
+    public function barbershopRequests()
+    {
+        return $this->hasMany(BarbershopRequest::class, 'requester_id');
+    }
+
     public function appointmentsAsClient()
     {
         return $this->hasMany(Appointment::class, 'client_id');

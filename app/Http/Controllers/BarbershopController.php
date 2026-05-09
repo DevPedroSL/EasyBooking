@@ -2,11 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\BarbershopRequestCreated;
 use App\Models\Barbershop;
+use App\Models\BarbershopRequest;
 use App\Models\Service;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class BarbershopController extends Controller
@@ -19,6 +24,60 @@ class BarbershopController extends Controller
     private function redirectWithoutBarbershop()
     {
         return redirect()->route('inicio')->with('error', 'No tienes una barbería asignada.');
+    }
+
+    public function createRequest()
+    {
+        $user = auth()->user();
+
+        if ($user->barbershop) {
+            return redirect()->route('barbershops.dashboard');
+        }
+
+        $latestRequest = BarbershopRequest::where('requester_id', $user->id)
+            ->latest()
+            ->first();
+
+        return view('barbershop_requests.create', compact('latestRequest'));
+    }
+
+    public function storeRequest(Request $request)
+    {
+        $user = auth()->user();
+
+        if ($user->barbershop) {
+            return redirect()->route('barbershops.dashboard');
+        }
+
+        if ($user->barbershopRequests()->where('status', 'pending')->exists()) {
+            return redirect()
+                ->route('barbershop-requests.create')
+                ->with('error', 'Ya tienes una solicitud pendiente de revisión.');
+        }
+
+        $validated = $request->validate([
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('barbershops', 'name'),
+                Rule::unique('barbershop_requests', 'name')->where(fn ($query) => $query->where('status', 'pending')),
+            ],
+            'address' => 'required|string|max:255',
+            'phone' => 'required|string|max:20',
+            'visibility' => 'required|in:public,private',
+        ]);
+
+        $barbershopRequest = $user->barbershopRequests()->create($validated);
+
+        $adminEmails = User::where('role', 'admin')->pluck('email')->all();
+        if ($adminEmails !== []) {
+            Mail::to($adminEmails)->send(new BarbershopRequestCreated($barbershopRequest));
+        }
+
+        return redirect()
+            ->route('barbershop-requests.create')
+            ->with('success', 'Solicitud enviada correctamente. Un administrador la revisará pronto.');
     }
 
     public function dashboard()

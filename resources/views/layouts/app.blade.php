@@ -40,6 +40,8 @@
           <a href="{{ route('appointments.my') }}" class="text-sm font-medium">Mis Citas</a>
           @if($ownedBarbershop)
             <a href="{{ route('barbershops.dashboard') }}" class="nav-action inline-block px-3 py-1 text-sm font-medium transition-colors">Mi barbería</a>
+          @elseif(auth()->user()->role !== 'admin')
+            <a href="{{ route('barbershop-requests.create') }}" class="nav-action inline-block px-3 py-1 text-sm font-medium transition-colors">Crear barbería</a>
           @endif
           @if(auth()->user()->role === 'admin')
             <a href="{{ route('admin.dashboard') }}" class="nav-action inline-block px-3 py-1 text-sm font-medium transition-colors">Panel Admin</a>
@@ -58,6 +60,8 @@
             <a href="{{ route('profile.edit') }}" class="block px-4 py-2 text-sm">Editar Perfil</a>
             @if($ownedBarbershop)
               <a href="{{ route('barbershops.dashboard') }}" class="block px-4 py-2 text-sm">Mi barbería</a>
+            @elseif(auth()->user()->role !== 'admin')
+              <a href="{{ route('barbershop-requests.create') }}" class="block px-4 py-2 text-sm">Crear barbería</a>
             @endif
             @if(auth()->user()->role === 'admin')
               <a href="{{ route('admin.dashboard') }}" class="block px-4 py-2 text-sm">Panel Admin</a>

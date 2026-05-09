@@ -276,7 +276,7 @@
                             Modificar horario
                         </a>
                         <a href="{{ route('barbershops.services.index') }}" class="inline-flex min-h-12 items-center justify-center rounded-xl border border-gray-300 px-6 py-3 text-sm font-bold text-gray-700 transition hover:bg-gray-100">
-                            Gestionar servicios
+                            Editar servicios
                         </a>
                         <button type="submit" class="eb-button px-8 py-3">
                             Guardar cambios

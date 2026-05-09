@@ -8,6 +8,11 @@
         <div>
             <h1 class="page-title">Barberías Disponibles</h1>
         </div>
+        @auth
+            @if(!auth()->user()->barbershop && auth()->user()->role !== 'admin')
+                <a href="{{ route('barbershop-requests.create') }}" class="eb-button px-5 py-3">Crear barbería</a>
+            @endif
+        @endauth
     </div>
 
     <div class="eb-panel mb-8 p-6">

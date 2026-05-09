@@ -2,10 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\BarbershopRequestApproved;
+use App\Mail\BarbershopRequestRejected;
 use App\Models\Barbershop;
+use App\Models\BarbershopRequest;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -25,6 +29,7 @@ class AdminController extends Controller
             'usersCount' => User::count(),
             'barbersCount' => User::where('role', 'barber')->count(),
             'customersCount' => User::where('role', 'customer')->count(),
+            'pendingBarbershopRequestsCount' => BarbershopRequest::where('status', 'pending')->count(),
         ]);
     }
 
@@ -109,6 +114,98 @@ class AdminController extends Controller
         $barbershop->delete();
 
         return redirect()->route('admin.barbershops.index')->with('success', 'Barbería eliminada correctamente.');
+    }
+
+    public function barbershopRequestsIndex()
+    {
+        $this->ensureAdmin();
+
+        $requests = BarbershopRequest::with(['requester', 'reviewer'])
+            ->latest()
+            ->get();
+
+        return view('admin.barbershop_requests.index', compact('requests'));
+    }
+
+    public function barbershopRequestsApprove(BarbershopRequest $barbershopRequest)
+    {
+        $this->ensureAdmin();
+
+        if (! $barbershopRequest->isPending()) {
+            return redirect()
+                ->route('admin.barbershop-requests.index')
+                ->with('error', 'Esta solicitud ya fue revisada.');
+        }
+
+        if (Barbershop::where('name', $barbershopRequest->name)->exists()) {
+            return redirect()
+                ->route('admin.barbershop-requests.index')
+                ->with('error', 'Ya existe una barbería con ese nombre.');
+        }
+
+        if ($barbershopRequest->requester?->barbershop) {
+            return redirect()
+                ->route('admin.barbershop-requests.index')
+                ->with('error', 'Este usuario ya tiene una barbería asignada.');
+        }
+
+        DB::transaction(function () use ($barbershopRequest) {
+            $requester = User::whereKey($barbershopRequest->requester_id)->lockForUpdate()->firstOrFail();
+
+            $requester->barbershop()->create([
+                'name' => $barbershopRequest->name,
+                'address' => $barbershopRequest->address,
+                'phone' => $barbershopRequest->phone,
+                'visibility' => $barbershopRequest->visibility,
+            ]);
+
+            $requester->forceFill([
+                'role' => 'barber',
+            ])->save();
+
+            $barbershopRequest->update([
+                'status' => 'approved',
+                'rejection_reason' => null,
+                'reviewed_by' => auth()->id(),
+                'reviewed_at' => now(),
+            ]);
+        });
+
+        $barbershopRequest->refresh()->load('requester');
+        Mail::to($barbershopRequest->requester->email)->send(new BarbershopRequestApproved($barbershopRequest));
+
+        return redirect()
+            ->route('admin.barbershop-requests.index')
+            ->with('success', 'Solicitud aceptada. La barbería ya está creada.');
+    }
+
+    public function barbershopRequestsReject(Request $request, BarbershopRequest $barbershopRequest)
+    {
+        $this->ensureAdmin();
+
+        if (! $barbershopRequest->isPending()) {
+            return redirect()
+                ->route('admin.barbershop-requests.index')
+                ->with('error', 'Esta solicitud ya fue revisada.');
+        }
+
+        $validated = $request->validate([
+            'rejection_reason' => 'nullable|string|max:1000',
+        ]);
+
+        $barbershopRequest->update([
+            'status' => 'rejected',
+            'rejection_reason' => $validated['rejection_reason'] ?? null,
+            'reviewed_by' => auth()->id(),
+            'reviewed_at' => now(),
+        ]);
+
+        $barbershopRequest->load('requester');
+        Mail::to($barbershopRequest->requester->email)->send(new BarbershopRequestRejected($barbershopRequest));
+
+        return redirect()
+            ->route('admin.barbershop-requests.index')
+            ->with('success', 'Solicitud rechazada correctamente.');
     }
 
     public function usersIndex()
