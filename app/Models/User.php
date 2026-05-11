@@ -26,7 +26,6 @@ class User extends Authenticatable
         'avatar_path',
         'role',
         'is_banned',
-        'barbershop_id',
     ];
 
     /**
@@ -69,11 +68,6 @@ class User extends Authenticatable
     public function appointmentsAsClient()
     {
         return $this->hasMany(Appointment::class, 'client_id');
-    }
-
-    public function appointmentsAsBarbershop()
-    {
-        return $this->hasMany(Appointment::class, 'barbershop_id');
     }
 
     public function getAvatarUrlAttribute(): string

@@ -2,26 +2,24 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Appointment;
-use App\Models\Barbershop;
-use App\Models\Service;
-use App\Services\AppointmentSelectionService;
-use App\Services\AppointmentPdfService;
 use App\Mail\AppointmentAccepted;
 use App\Mail\AppointmentCreated;
 use App\Mail\AppointmentRejected;
+use App\Models\Appointment;
+use App\Models\Barbershop;
+use App\Models\Service;
+use App\Services\AppointmentPdfService;
+use App\Services\AppointmentSelectionService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
-use Carbon\Carbon;
 
 class AppointmentController extends Controller
 {
     public function __construct(
         private AppointmentSelectionService $appointmentSelectionService
-    ) {
-    }
+    ) {}
 
     public function create(Request $request, Barbershop $barbershop, Service $service)
     {
@@ -42,6 +40,12 @@ class AppointmentController extends Controller
         $weekdayLabels = ['Lun.', 'Mar.', 'Mie.', 'Jue.', 'Vie.', 'Sab.', 'Dom.'];
         $firstMonthStart = $today->copy()->startOfMonth();
         $lastMonthStart = $today->copy()->addMonthNoOverflow()->startOfMonth();
+        $calendarEnd = $lastMonthStart->copy()->endOfMonth();
+        $blockingAppointmentsByDate = $this->appointmentSelectionService->blockingAppointmentsByDate(
+            $barbershop,
+            $firstMonthStart,
+            $calendarEnd
+        );
 
         for ($monthDate = $firstMonthStart->copy(); $monthDate->lte($lastMonthStart); $monthDate->addMonth()) {
             $monthStart = $monthDate->copy()->startOfMonth();
@@ -63,7 +67,13 @@ class AppointmentController extends Controller
                 $slots = [];
                 $availableSlotCount = 0;
                 if ($schedules->isNotEmpty() && $currentDate->gte($today)) {
-                    $slots = $this->appointmentSelectionService->getSlotsForServiceInSchedules($barbershop, $currentDate, $schedules, $service);
+                    $slots = $this->appointmentSelectionService->getSlotsForServiceInSchedules(
+                        $barbershop,
+                        $currentDate,
+                        $schedules,
+                        $service,
+                        $blockingAppointmentsByDate->get($currentDate->format('Y-m-d'), collect())
+                    );
                     $availableSlotCount = collect($slots)->where('available', true)->count();
                 }
 
@@ -136,7 +146,7 @@ class AppointmentController extends Controller
 
         $selection = $this->appointmentSelectionService->validateSelectionRequest($request, $barbershop);
 
-        if (!$this->appointmentSelectionService->isSlotAvailable($barbershop, $selection['startTime'], $selection['endTime'])) {
+        if (! $this->appointmentSelectionService->isSlotAvailable($barbershop, $selection['startTime'], $selection['endTime'])) {
             return redirect()
                 ->route('appointments.create', ['barbershop' => $barbershop, 'service' => $selection['service']])
                 ->withErrors(['datetime' => 'El horario seleccionado no está disponible.']);
@@ -170,7 +180,7 @@ class AppointmentController extends Controller
         $startTime = $selection['startTime'];
         $endTime = $selection['endTime'];
 
-        if (!$this->appointmentSelectionService->isSlotAvailable($barbershop, $startTime, $endTime)) {
+        if (! $this->appointmentSelectionService->isSlotAvailable($barbershop, $startTime, $endTime)) {
             return redirect()
                 ->route('appointments.create', ['barbershop' => $barbershop, 'service' => $service])
                 ->withErrors(['datetime' => 'El horario seleccionado no está disponible.'])
@@ -209,7 +219,7 @@ class AppointmentController extends Controller
         $canViewAsBarber = $userBarbershop && $appointment->barbershop_id === $userBarbershop->id;
         $canViewAsClient = $appointment->client_id === $user->id;
 
-        if (!$canViewAsBarber && !$canViewAsClient) {
+        if (! $canViewAsBarber && ! $canViewAsClient) {
             abort(403);
         }
 
@@ -229,11 +239,11 @@ class AppointmentController extends Controller
         abort_unless($appointment->status === 'accepted', 403);
         abort_unless($canViewAsBarber || $canViewAsClient || $canViewAsAdmin, 403);
 
-        $filename = 'cita-' . $appointment->id . '.pdf';
+        $filename = 'cita-'.$appointment->id.'.pdf';
 
         return response($appointmentPdfService->render($appointment), 200, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
         ]);
     }
 
@@ -249,7 +259,7 @@ class AppointmentController extends Controller
     public function barberAppointments(Request $request)
     {
         $barbershop = Auth::user()->barbershop;
-        if (!$barbershop) {
+        if (! $barbershop) {
             abort(403, 'No tienes una barbería asignada.');
         }
 
@@ -259,7 +269,7 @@ class AppointmentController extends Controller
             'rejected' => 'Rechazadas',
         ];
         $selectedStatus = $request->query('status');
-        if (!array_key_exists($selectedStatus, $statusOptions)) {
+        if (! array_key_exists($selectedStatus, $statusOptions)) {
             $selectedStatus = null;
         }
 
@@ -277,7 +287,7 @@ class AppointmentController extends Controller
     public function barberAgenda(Request $request)
     {
         $barbershop = Auth::user()->barbershop;
-        if (!$barbershop) {
+        if (! $barbershop) {
             abort(403, 'No tienes una barbería asignada.');
         }
 
@@ -417,7 +427,7 @@ class AppointmentController extends Controller
     public function updateStatus(Request $request, Appointment $appointment)
     {
         $barbershop = Auth::user()->barbershop;
-        if (!$barbershop || $appointment->barbershop_id != $barbershop->id) {
+        if (! $barbershop || $appointment->barbershop_id != $barbershop->id) {
             abort(403);
         }
 

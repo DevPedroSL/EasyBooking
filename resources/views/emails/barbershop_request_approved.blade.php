@@ -5,9 +5,6 @@
 @section('header_title', 'Solicitud aceptada')
 
 @section('content')
-    <p>Hola {{ $barbershop->barber->name }},</p>
-    <p>Has recibido una nueva reserva de cita en tu barbería <strong>{{ $barbershop->name }}</strong>.</p>
-
     <div class="content">
         <p>Hola {{ $requester->name }},</p>
 

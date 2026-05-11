@@ -22,7 +22,6 @@ return new class extends Migration
             $table->rememberToken();
             $table->enum('role', ['admin', 'barber', 'customer'])->default('customer');
             $table->boolean('is_banned')->default(false);
-            $table->foreignId('barbershop_id')->nullable();
             $table->timestamps();
         });
 

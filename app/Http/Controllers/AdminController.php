@@ -7,14 +7,21 @@ use App\Mail\BarbershopRequestRejected;
 use App\Models\Barbershop;
 use App\Models\BarbershopRequest;
 use App\Models\User;
+use App\Services\StoredImageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Symfony\Component\Process\Process;
 
 class AdminController extends Controller
 {
+    public function __construct(
+        private StoredImageService $storedImageService
+    ) {}
+
     private function ensureAdmin(): void
     {
         abort_unless(auth()->check() && auth()->user()->role === 'admin', 403);
@@ -68,7 +75,11 @@ class AdminController extends Controller
 
         $barbershop->update(collect($validated)->except(['image', 'remove_image', 'gallery_images', 'remove_gallery_images'])->all());
 
-        [$remainingPaths, $removedPaths] = $this->barbershopImagePathsAfterRemovalSelection($barbershop, $request);
+        [$remainingPaths, $removedPaths] = $this->storedImageService->pathsAfterRemovalSelection(
+            $barbershop->stored_image_paths,
+            $request,
+            'remove_gallery_images'
+        );
         $newImageCount = count($request->file('gallery_images', []));
 
         if (count($remainingPaths) + $newImageCount > 4) {
@@ -90,11 +101,11 @@ class AdminController extends Controller
             $barbershop->image_path = $request->file('image')->store('barbershops', 'public');
         }
 
-        $this->deleteBarbershopImages($removedPaths);
+        $this->storedImageService->deletePublicImages($removedPaths);
 
         $finalImagePaths = array_values(array_merge(
             $remainingPaths,
-            $this->storeUploadedBarbershopGalleryImages($request)
+            $this->storedImageService->storeUploadedImages($request, 'gallery_images', 'barbershops', 4)
         ));
 
         $barbershop->update([
@@ -109,7 +120,7 @@ class AdminController extends Controller
     {
         $this->ensureAdmin();
 
-        $this->deleteBarbershopImages($barbershop->stored_image_paths);
+        $this->storedImageService->deletePublicImages($barbershop->stored_image_paths);
 
         $barbershop->delete();
 
@@ -230,7 +241,7 @@ class AdminController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
+            'email' => 'required|string|email|max:255|unique:users,email,'.$user->id,
             'phone' => 'required|string|max:20',
             'role' => 'required|in:admin,barber,customer',
             'is_banned' => 'nullable|boolean',
@@ -304,48 +315,6 @@ class AdminController extends Controller
         return redirect()->route('admin.users.index')->with('success', 'Usuario eliminado correctamente.');
     }
 
-    private function storeUploadedBarbershopGalleryImages(Request $request): array
-    {
-        return collect($request->file('gallery_images', []))
-            ->take(4)
-            ->map(fn ($image) => $image->store('barbershops', 'public'))
-            ->all();
-    }
-
-    private function barbershopImagePathsAfterRemovalSelection(Barbershop $barbershop, Request $request): array
-    {
-        $currentPaths = $barbershop->stored_image_paths;
-        $removeIndexes = collect($request->input('remove_gallery_images', []))
-            ->map(fn ($index) => (int) $index)
-            ->filter(fn ($index) => array_key_exists($index, $currentPaths))
-            ->unique()
-            ->values()
-            ->all();
-
-        $removedPaths = [];
-        $remainingPaths = [];
-
-        foreach ($currentPaths as $index => $path) {
-            if (in_array($index, $removeIndexes, true)) {
-                $removedPaths[] = $path;
-                continue;
-            }
-
-            $remainingPaths[] = $path;
-        }
-
-        return [$remainingPaths, $removedPaths];
-    }
-
-    private function deleteBarbershopImages(array $paths): void
-    {
-        foreach ($paths as $path) {
-            if ($path) {
-                Storage::disk('public')->delete($path);
-            }
-        }
-    }
-
     private function disableUserAccess(User $user): void
     {
         $user->forceFill([
@@ -355,37 +324,50 @@ class AdminController extends Controller
         DB::table('sessions')->where('user_id', $user->id)->delete();
     }
 
-   public function backup()
+    public function backup()
     {
         $this->ensureAdmin();
 
+        $backupPath = null;
+        $dumpFile = null;
+        $zip = new \ZipArchive;
+        $zipOpen = false;
+
         try {
-            $backupDir = storage_path('app/backups');
-            if (!is_dir($backupDir)) {
-                mkdir($backupDir, 0755, true);
-            }
+            $backupDir = $this->backupDirectory();
 
             $timestamp = now()->format('Y-m-d_H-i-s');
             $backupFileName = "backup_{$timestamp}.zip";
             $backupPath = "$backupDir/$backupFileName";
+            $dumpFile = "$backupDir/database_dump_{$timestamp}.sql";
 
-            $zip = new \ZipArchive();
             if ($zip->open($backupPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
                 throw new \Exception('No se pudo crear el archivo ZIP');
             }
+            $zipOpen = true;
 
-            // Agregar base de datos
-            $this->addDatabaseToZip($zip, $backupDir);
-
-            // Agregar archivos importantes del proyecto
+            $this->dumpDatabaseToFile($dumpFile);
+            $zip->addFile($dumpFile, 'database_dump.sql');
             $this->addProjectFilesToZip($zip);
 
             $zip->close();
+            $zipOpen = false;
 
             return response()->download($backupPath, $backupFileName)->deleteFileAfterSend(true);
-        } catch (\Exception $e) {
-            return redirect()->route('admin.dashboard')
-                ->with('error', 'Error al crear la copia de seguridad: ' . $e->getMessage());
+        } catch (\Throwable $e) {
+            if ($backupPath && file_exists($backupPath)) {
+                @unlink($backupPath);
+            }
+
+            return $this->backupFailureResponse($e, 'Error al crear la copia de seguridad.');
+        } finally {
+            if ($zipOpen) {
+                $zip->close();
+            }
+
+            if ($dumpFile && file_exists($dumpFile)) {
+                @unlink($dumpFile);
+            }
         }
     }
 
@@ -393,91 +375,96 @@ class AdminController extends Controller
     {
         $this->ensureAdmin();
 
+        $backupPath = null;
+
         try {
-            $backupDir = storage_path('app/backups');
-            if (!is_dir($backupDir)) {
-                mkdir($backupDir, 0755, true);
-            }
+            $backupDir = $this->backupDirectory();
 
             $timestamp = now()->format('Y-m-d_H-i-s');
             $backupFileName = "backup_database_{$timestamp}.sql";
             $backupPath = "$backupDir/$backupFileName";
 
-            $dbPath = config('database.connections.mysql.database');
-            $dbUser = config('database.connections.mysql.username');
-            $dbPassword = config('database.connections.mysql.password');
-            $dbHost = config('database.connections.mysql.host');
-
-            // Usar mysqldump para crear el dump
-            $command = sprintf(
-                'mysqldump -h %s -u %s %s',
-                escapeshellarg($dbHost),
-                escapeshellarg($dbUser),
-                escapeshellarg($dbPath)
-            );
-
-            if (!empty($dbPassword)) {
-                $command = sprintf(
-                    'mysqldump -h %s -u %s -p%s %s',
-                    escapeshellarg($dbHost),
-                    escapeshellarg($dbUser),
-                    escapeshellarg($dbPassword),
-                    escapeshellarg($dbPath)
-                );
-            }
-
-            $command .= " > " . escapeshellarg($backupPath);
-
-            $output = null;
-            $returnVar = null;
-            @exec($command, $output, $returnVar);
-
-            if (!file_exists($backupPath) || filesize($backupPath) === 0) {
-                throw new \Exception('No se pudo crear el dump de la base de datos');
-            }
+            $this->dumpDatabaseToFile($backupPath);
 
             return response()->download($backupPath, $backupFileName)->deleteFileAfterSend(true);
-        } catch (\Exception $e) {
-            return redirect()->route('admin.dashboard')
-                ->with('error', 'Error al crear el backup de la base de datos: ' . $e->getMessage());
+        } catch (\Throwable $e) {
+            if ($backupPath && file_exists($backupPath)) {
+                @unlink($backupPath);
+            }
+
+            return $this->backupFailureResponse($e, 'Error al crear el backup de la base de datos.');
         }
     }
 
-    private function addDatabaseToZip(\ZipArchive $zip, string $backupDir): void
+    private function backupDirectory(): string
     {
-        $dbPath = config('database.connections.mysql.database');
-        $dbUser = config('database.connections.mysql.username');
-        $dbPassword = config('database.connections.mysql.password');
-        $dbHost = config('database.connections.mysql.host');
-
-        $dumpFile = "$backupDir/database_dump.sql";
-
-        // Usar mysqldump si está disponible
-        $command = sprintf(
-            'mysqldump -h %s -u %s %s',
-            escapeshellarg($dbHost),
-            escapeshellarg($dbUser),
-            escapeshellarg($dbPath)
-        );
-
-        if (!empty($dbPassword)) {
-            $command = sprintf(
-                'mysqldump -h %s -u %s -p%s %s',
-                escapeshellarg($dbHost),
-                escapeshellarg($dbUser),
-                escapeshellarg($dbPassword),
-                escapeshellarg($dbPath)
-            );
+        $backupDir = storage_path('app/backups');
+        if (! is_dir($backupDir)) {
+            mkdir($backupDir, 0750, true);
         }
 
-        $command .= " > " . escapeshellarg($dumpFile);
+        return $backupDir;
+    }
 
-        $output = null;
-        $returnVar = null;
-        @exec($command, $output, $returnVar);
+    private function dumpDatabaseToFile(string $dumpFile): void
+    {
+        $connection = config('database.default');
+        if (! in_array($connection, ['mysql', 'mariadb'], true)) {
+            throw new \RuntimeException('El backup automatico solo soporta conexiones mysql o mariadb.');
+        }
 
-        if (file_exists($dumpFile)) {
-            $zip->addFile($dumpFile, 'database_dump.sql');
+        $config = config("database.connections.$connection");
+        $database = (string) ($config['database'] ?? '');
+        $username = (string) ($config['username'] ?? '');
+        $password = (string) ($config['password'] ?? '');
+        $host = (string) ($config['host'] ?? '127.0.0.1');
+        $port = (string) ($config['port'] ?? '3306');
+
+        if ($database === '' || $username === '') {
+            throw new \RuntimeException('La conexion de base de datos no esta configurada para backup.');
+        }
+
+        $process = new Process([
+            'mysqldump',
+            '--single-transaction',
+            '--quick',
+            '--skip-lock-tables',
+            '--host='.$host,
+            '--port='.$port,
+            '--user='.$username,
+            $database,
+        ]);
+
+        if ($password !== '') {
+            $process->setEnv(['MYSQL_PWD' => $password]);
+        }
+
+        $process->setTimeout(120);
+        $errorOutput = '';
+        $handle = fopen($dumpFile, 'wb');
+
+        if ($handle === false) {
+            throw new \RuntimeException('No se pudo preparar el archivo de backup.');
+        }
+
+        try {
+            $process->run(function (string $type, string $buffer) use ($handle, &$errorOutput): void {
+                if ($type === Process::OUT) {
+                    fwrite($handle, $buffer);
+
+                    return;
+                }
+
+                $errorOutput .= $buffer;
+            });
+        } finally {
+            fclose($handle);
+        }
+
+        if (! $process->isSuccessful() || ! file_exists($dumpFile) || filesize($dumpFile) === 0) {
+            @unlink($dumpFile);
+
+            throw new \RuntimeException(trim($errorOutput) ?: 'No se pudo crear el dump de la base de datos.');
         }
     }
 
@@ -493,9 +480,11 @@ class AdminController extends Controller
             'resources/views',
             'resources/js',
             'resources/css',
-            '.env',
+            '.env.example',
             'composer.json',
+            'composer.lock',
             'package.json',
+            'package-lock.json',
         ];
 
         foreach ($filesToBackup as $fileOrDir) {
@@ -525,9 +514,20 @@ class AdminController extends Controller
         foreach ($files as $file) {
             if ($file->isFile()) {
                 $filePath = $file->getRealPath();
-                $relativePath = $zipPath . '/' . substr($filePath, strlen($dir) + 1);
+                $relativePath = $zipPath.'/'.substr($filePath, strlen($dir) + 1);
                 $zip->addFile($filePath, str_replace('\\', '/', $relativePath));
             }
         }
+    }
+
+    private function backupFailureResponse(\Throwable $e, string $message)
+    {
+        Log::error($message, [
+            'exception' => $e,
+            'admin_id' => auth()->id(),
+        ]);
+
+        return redirect()->route('admin.dashboard')
+            ->with('error', $message.' Revisa los logs del servidor.');
     }
 }

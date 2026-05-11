@@ -5,9 +5,6 @@
 @section('header_title', 'Nueva solicitud de barberia')
 
 @section('content')
-    <p>Hola {{ $barbershop->barber->name }},</p>
-    <p>Has recibido una nueva reserva de cita en tu barbería <strong>{{ $barbershop->name }}</strong>.</p>
-
     <div class="content">
         <p>Hola,</p>
 

@@ -8,6 +8,7 @@
   $principalImage = $barbershop->image_url;
   $galleryImages = $barbershop->gallery_images;
   $heroImages = collect([]);
+  $phoneHref = preg_replace('/\D+/', '', $barbershop->phone);
 
   if ($principalImage) {
     $heroImages->push([
@@ -137,7 +138,7 @@
         </div>
         <div class="mt-2 flex items-center gap-2 text-sm font-semibold">
           <x-heroicon-s-phone class="h-4 w-4" />
-          <p class="font-semibold">{{ $barbershop->phone }}</p>
+          <a href="tel:{{ $phoneHref }}" class="font-semibold transition hover:text-violet-100">{{ $barbershop->phone }}</a>
         </div>
 
         @if($barbershop->barber)

@@ -70,6 +70,10 @@
                     </div>
                     <div class="mb-5 space-y-1 text-sm font-semibold text-gray-700">
                         <p>{{ $barbershop->address }}</p>
+                        @php($phoneHref = preg_replace('/\D+/', '', $barbershop->phone))
+                        <a href="tel:{{ $phoneHref }}" class="inline-flex text-violet-700 transition hover:text-violet-900">
+                            {{ $barbershop->phone }}
+                        </a>
                     </div>
                     <a href="{{ route('barbershop', $barbershop->name) }}" class="eb-button">
                         Ver Servicios

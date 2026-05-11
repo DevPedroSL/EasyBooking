@@ -52,4 +52,33 @@ class AdminPolicyTest extends TestCase
             ->get(route('admin.barbershops.edit', $barbershop))
             ->assertForbidden();
     }
+
+    public function test_backup_downloads_are_not_available_through_get_requests(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $this
+            ->actingAs($admin)
+            ->get('/admin/backups')
+            ->assertMethodNotAllowed();
+
+        $this
+            ->actingAs($admin)
+            ->get('/admin/backups/database')
+            ->assertMethodNotAllowed();
+    }
+
+    public function test_admin_dashboard_uses_post_forms_for_backups(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $this
+            ->actingAs($admin)
+            ->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertSee('method="POST"', false)
+            ->assertSee(route('admin.backup', absolute: false), false)
+            ->assertSee(route('admin.backup.database', absolute: false), false)
+            ->assertSee('name="_token"', false);
+    }
 }

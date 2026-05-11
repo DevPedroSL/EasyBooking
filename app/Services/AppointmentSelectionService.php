@@ -7,6 +7,7 @@ use App\Models\Barbershop;
 use App\Models\Service;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
@@ -16,15 +17,40 @@ class AppointmentSelectionService
 
     public function getSlotsForService(Barbershop $barbershop, Carbon $date, $schedule, Service $service): array
     {
+        return $this->getSlotsForSchedule(
+            $barbershop,
+            $date,
+            $schedule,
+            $service,
+            $this->blockingAppointmentsForDate($barbershop, $date)
+        );
+    }
+
+    public function blockingAppointmentsByDate(Barbershop $barbershop, Carbon $startDate, Carbon $endDate): Collection
+    {
+        return Appointment::where('barbershop_id', $barbershop->id)
+            ->whereBetween('appointment_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+            ->whereIn('status', self::BLOCKING_STATUSES)
+            ->get(['appointment_date', 'start_time', 'end_time'])
+            ->groupBy(fn (Appointment $appointment) => (string) $appointment->getRawOriginal('appointment_date'));
+    }
+
+    private function blockingAppointmentsForDate(Barbershop $barbershop, Carbon $date): Collection
+    {
+        return Appointment::where('barbershop_id', $barbershop->id)
+            ->where('appointment_date', $date->format('Y-m-d'))
+            ->whereIn('status', self::BLOCKING_STATUSES)
+            ->get(['start_time', 'end_time']);
+    }
+
+    private function getSlotsForSchedule(Barbershop $barbershop, Carbon $date, $schedule, Service $service, iterable $existingAppointments): array
+    {
         $start = $date->copy()->setTimeFromTimeString($schedule->start_time);
         $end = $date->copy()->setTimeFromTimeString($schedule->end_time);
         $slotInterval = $this->slotIntervalMinutes($barbershop);
 
         $slots = [];
-        $existingAppointments = Appointment::where('barbershop_id', $barbershop->id)
-            ->where('appointment_date', $date->format('Y-m-d'))
-            ->whereIn('status', self::BLOCKING_STATUSES)
-            ->get(['start_time', 'end_time']);
+        $existingAppointments = collect($existingAppointments);
 
         $current = $start->copy();
         if ($date->isToday() && $current->lessThan(now())) {
@@ -70,11 +96,15 @@ class AppointmentSelectionService
             ->all();
     }
 
-    public function getSlotsForServiceInSchedules(Barbershop $barbershop, Carbon $date, iterable $schedules, Service $service): array
+    public function getSlotsForServiceInSchedules(Barbershop $barbershop, Carbon $date, iterable $schedules, Service $service, ?iterable $existingAppointments = null): array
     {
+        $appointments = $existingAppointments === null
+            ? $this->blockingAppointmentsForDate($barbershop, $date)
+            : collect($existingAppointments);
+
         return collect($schedules)
             ->sortBy('start_time')
-            ->flatMap(fn ($schedule) => $this->getSlotsForService($barbershop, $date, $schedule, $service))
+            ->flatMap(fn ($schedule) => $this->getSlotsForSchedule($barbershop, $date, $schedule, $service, $appointments))
             ->unique('time')
             ->sortBy('time')
             ->values()
@@ -108,13 +138,13 @@ class AppointmentSelectionService
             ->where('barbershop_id', $barbershop->id)
             ->first();
 
-        if (!$service) {
+        if (! $service) {
             throw ValidationException::withMessages([
                 'service_id' => 'El servicio seleccionado no pertenece a esta barbería.',
             ]);
         }
 
-        if (!$service->isVisibleTo(auth()->user())) {
+        if (! $service->isVisibleTo(auth()->user())) {
             throw ValidationException::withMessages([
                 'service_id' => 'El servicio seleccionado no está disponible.',
             ]);
@@ -123,7 +153,7 @@ class AppointmentSelectionService
         $startTime = Carbon::createFromFormat('Y-m-d H:i', $validated['datetime']);
         $endTime = $startTime->copy()->addMinutes($service->duration);
 
-        if (!$this->isSelectableSlot($barbershop, $service, $startTime)) {
+        if (! $this->isSelectableSlot($barbershop, $service, $startTime)) {
             throw ValidationException::withMessages([
                 'datetime' => 'El horario seleccionado no está disponible.',
             ]);
@@ -142,7 +172,7 @@ class AppointmentSelectionService
         $bookingWindowStart = Carbon::today();
         $bookingWindowEnd = $bookingWindowStart->copy()->addMonthNoOverflow()->endOfMonth();
 
-        if (!$startTime->betweenIncluded($bookingWindowStart, $bookingWindowEnd)) {
+        if (! $startTime->betweenIncluded($bookingWindowStart, $bookingWindowEnd)) {
             return false;
         }
 
@@ -164,7 +194,7 @@ class AppointmentSelectionService
 
     public function isSlotAvailable(Barbershop $barbershop, Carbon $startTime, Carbon $endTime): bool
     {
-        return !Appointment::where('barbershop_id', $barbershop->id)
+        return ! Appointment::where('barbershop_id', $barbershop->id)
             ->where('appointment_date', $startTime->format('Y-m-d'))
             ->whereIn('status', self::BLOCKING_STATUSES)
             ->where('start_time', '<', $endTime->format('H:i:s'))

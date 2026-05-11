@@ -56,13 +56,19 @@
                 </div>
             </div>
         </section>
-         <section class="eb-panel p-8">
+        <section class="eb-panel p-8">
             <h2 class="mt-2 text-3xl font-black text-gray-900">Copia de seguridad</h2>
             <div class="mt-6 space-y-4">
-                <div class="flex flex-wrap gap-4"> 
+                <div class="flex flex-wrap gap-4">
                     <p class="text-gray-600 w-full">Descarga una copia de seguridad completa de la base de datos y archivos del sistema.</p>
-                    <a href="{{ route('admin.backup') }}" class="eb-button mt-2">Descargar copia completa</a>
-                    <a href="{{ route('admin.backup.database') }}" class="eb-button mt-2">Descargar base de datos</a>
+                    <form method="POST" action="{{ route('admin.backup') }}">
+                        @csrf
+                        <button type="submit" class="eb-button mt-2">Descargar copia completa</button>
+                    </form>
+                    <form method="POST" action="{{ route('admin.backup.database') }}">
+                        @csrf
+                        <button type="submit" class="eb-button mt-2">Descargar base de datos</button>
+                    </form>
                 </div>
             </div>
         </section>

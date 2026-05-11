@@ -2,7 +2,6 @@
 
 namespace Database\Factories;
 
-use App\Models\Schedule;
 use App\Models\Barbershop;
 use Illuminate\Database\Eloquent\Factories\Factory;
 

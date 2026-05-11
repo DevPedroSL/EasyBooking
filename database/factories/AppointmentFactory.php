@@ -2,9 +2,7 @@
 
 namespace Database\Factories;
 
-use App\Models\Appointment;
 use App\Models\User;
-use App\Models\Service;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

@@ -1,9 +1,9 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AdminController;
-use App\Http\Controllers\BarbershopController;
 use App\Http\Controllers\AppointmentController;
+use App\Http\Controllers\BarbershopController;
+use App\Http\Controllers\ProfileController;
 use App\Models\Barbershop;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -15,10 +15,10 @@ Route::get('/', function (Request $request) {
     $barbershops = Barbershop::query()
         ->publiclyVisible()
         ->when($name !== '', function ($query) use ($name) {
-            $query->where('name', 'like', '%' . $name . '%');
+            $query->where('name', 'like', '%'.$name.'%');
         })
         ->when($address !== '', function ($query) use ($address) {
-            $query->where('address', 'like', '%' . $address . '%');
+            $query->where('address', 'like', '%'.$address.'%');
         })
         ->get();
 
@@ -51,6 +51,7 @@ Route::patch('/appointments/{appointment}/status', [AppointmentController::class
 
 Route::get('/barbershop/{name}', function ($name) {
     $barbershop = Barbershop::where('name', urldecode($name))->with('services', 'barber')->firstOrFail();
+    $barbershop->services->each->setRelation('barbershop', $barbershop);
 
     abort_unless($barbershop->isVisibleTo(auth()->user()), 404);
 
@@ -105,8 +106,8 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::patch('/users/{user}/unban', [AdminController::class, 'usersUnban'])->name('users.unban');
     Route::delete('/users/{user}', [AdminController::class, 'usersDestroy'])->name('users.destroy');
 
-    Route::get('/backups', [AdminController::class, 'backup'])->name('backup');
-    Route::get('/backups/database', [AdminController::class, 'backupDatabase'])->name('backup.database');
+    Route::post('/backups', [AdminController::class, 'backup'])->name('backup');
+    Route::post('/backups/database', [AdminController::class, 'backupDatabase'])->name('backup.database');
 });
 
 require __DIR__.'/auth.php';
