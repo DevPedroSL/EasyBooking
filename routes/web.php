@@ -6,21 +6,28 @@ use App\Http\Controllers\BarbershopController;
 use App\Http\Controllers\ProfileController;
 use App\Models\Barbershop;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function (Request $request) {
     $name = trim((string) $request->query('name', ''));
     $address = trim((string) $request->query('address', ''));
 
-    $barbershops = Barbershop::query()
-        ->publiclyVisible()
-        ->when($name !== '', function ($query) use ($name) {
-            $query->where('name', 'like', '%'.$name.'%');
-        })
-        ->when($address !== '', function ($query) use ($address) {
-            $query->where('address', 'like', '%'.$address.'%');
-        })
-        ->get();
+    $cacheVersion = Cache::get('public_barbershops_version', '1');
+    $cacheKey = 'public_barbershops:'.$cacheVersion.':'.md5(json_encode([$name, $address]));
+
+    $barbershops = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($name, $address) {
+        return Barbershop::query()
+            ->publiclyVisible()
+            ->when($name !== '', function ($query) use ($name) {
+                $query->where('name', 'like', '%'.$name.'%');
+            })
+            ->when($address !== '', function ($query) use ($address) {
+                $query->where('address', 'like', '%'.$address.'%');
+            })
+            ->orderBy('name')
+            ->get();
+    });
 
     return view('inicio', compact('barbershops', 'name', 'address'));
 })->name('inicio');
@@ -50,8 +57,22 @@ Route::patch('/appointments/{appointment}/cancel', [AppointmentController::class
 Route::patch('/appointments/{appointment}/status', [AppointmentController::class, 'updateStatus'])->name('appointments.updateStatus')->middleware('auth');
 
 Route::get('/barbershop/{name}', function ($name) {
-    $barbershop = Barbershop::where('name', urldecode($name))->with('services', 'barber')->firstOrFail();
-    $barbershop->services->each->setRelation('barbershop', $barbershop);
+    $decodedName = urldecode($name);
+    $cacheVersion = Cache::get('public_barbershops_version', '1');
+    $cacheKey = 'barbershop_detail:'.$cacheVersion.':'.md5($decodedName);
+
+    $barbershop = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($decodedName) {
+        $barbershop = Barbershop::where('name', $decodedName)
+            ->with([
+                'barber',
+                'services' => fn ($query) => $query->orderBy('name'),
+            ])
+            ->firstOrFail();
+
+        $barbershop->services->each->setRelation('barbershop', $barbershop);
+
+        return $barbershop;
+    });
 
     abort_unless($barbershop->isVisibleTo(auth()->user()), 404);
 

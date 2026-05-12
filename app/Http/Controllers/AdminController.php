@@ -11,6 +11,7 @@ use App\Services\StoredImageService;
 use App\Support\SafeMail;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -32,13 +33,15 @@ class AdminController extends Controller
     {
         $this->ensureAdmin();
 
-        return view('admin.index', [
+        $counts = Cache::remember('admin.dashboard.counts', now()->addMinute(), fn () => [
             'barbershopsCount' => Barbershop::count(),
             'usersCount' => User::count(),
             'barbersCount' => User::where('role', 'barber')->count(),
             'customersCount' => User::where('role', 'customer')->count(),
             'pendingBarbershopRequestsCount' => BarbershopRequest::where('status', 'pending')->count(),
         ]);
+
+        return view('admin.index', $counts);
     }
 
     public function barbershopsIndex()
@@ -273,10 +276,16 @@ class AdminController extends Controller
 
         $wasBanned = $user->is_banned;
 
-        $user->update([
-            ...$validated,
-            'is_banned' => $isBanned,
+        $user->fill([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'phone' => $validated['phone'],
         ]);
+
+        $user->forceFill([
+            'role' => $validated['role'],
+            'is_banned' => $isBanned,
+        ])->save();
 
         if (! $wasBanned && $isBanned) {
             $this->disableUserAccess($user);
@@ -372,7 +381,7 @@ class AdminController extends Controller
         $this->ensureAdmin();
 
         $validated = $request->validate([
-            'database_backup' => ['required', 'file', 'extensions:sql,txt', 'max:204800'],
+            'database_backup' => ['required', 'file', 'extensions:sql', 'max:204800'],
             'confirm_restore' => ['accepted'],
         ]);
 

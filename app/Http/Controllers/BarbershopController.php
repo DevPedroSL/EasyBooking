@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Barbershops\StoreServiceRequest;
+use App\Http\Requests\Barbershops\UpdateServiceRequest;
 use App\Mail\BarbershopRequestCreated;
 use App\Models\Barbershop;
 use App\Models\BarbershopRequest;
@@ -260,22 +262,14 @@ class BarbershopController extends Controller
         return view('barbershops.services.create', compact('barbershop'));
     }
 
-    public function storeService(Request $request)
+    public function storeService(StoreServiceRequest $request)
     {
         $barbershop = $this->currentUserBarbershop();
         if (! $barbershop) {
             return $this->redirectWithoutBarbershop();
         }
 
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string|max:50',
-            'duration' => 'required|integer|min:1',
-            'price' => 'required|numeric|min:0',
-            'visibility' => 'required|in:public,private',
-            'images' => 'nullable|array|max:3',
-            'images.*' => 'image|max:3072',
-        ]);
+        $validated = $request->validated();
 
         $serviceData = [
             'name' => $validated['name'],
@@ -308,7 +302,7 @@ class BarbershopController extends Controller
         return view('barbershops.services.edit', compact('barbershop', 'service'));
     }
 
-    public function updateService(Request $request, Service $service)
+    public function updateService(UpdateServiceRequest $request, Service $service)
     {
         $barbershop = $this->currentUserBarbershop();
         if (! $barbershop) {
@@ -317,17 +311,7 @@ class BarbershopController extends Controller
 
         abort_unless($service->barbershop_id === $barbershop->id, 403);
 
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string|max:50',
-            'duration' => 'required|integer|min:1',
-            'price' => 'required|numeric|min:0',
-            'visibility' => 'required|in:public,private',
-            'images' => 'nullable|array|max:3',
-            'images.*' => 'image|max:3072',
-            'remove_images' => 'nullable|array',
-            'remove_images.*' => 'integer',
-        ]);
+        $validated = $request->validated();
 
         [$remainingPaths, $removedPaths] = $this->storedImageService->pathsAfterRemovalSelection(
             $service->stored_image_paths,

@@ -36,9 +36,11 @@ class BarbershopSeeder extends Seeder
             'name' => 'Barber User',
             'phone' => '600000002',
             'password' => Hash::make('123'),
+        ]);
+        $barber->forceFill([
             'role' => 'barber',
             'email_verified_at' => now(),
-        ]);
+        ])->save();
 
         $barbershop = Barbershop::updateOrCreate([
             'name' => 'Barberia 1',

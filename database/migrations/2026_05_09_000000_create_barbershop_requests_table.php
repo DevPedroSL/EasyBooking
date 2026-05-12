@@ -23,6 +23,7 @@ return new class extends Migration
 
             $table->index(['requester_id', 'status']);
             $table->index('status');
+            $table->index(['name', 'status'], 'barbershop_requests_name_status_idx');
         });
     }
 

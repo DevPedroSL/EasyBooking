@@ -2,6 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\CreateAppointmentAction;
+use App\Actions\UpdateAppointmentStatusAction;
+use App\Http\Requests\Appointments\ConfirmAppointmentRequest;
+use App\Http\Requests\Appointments\StoreAppointmentRequest;
+use App\Http\Requests\Appointments\UpdateAppointmentStatusRequest;
 use App\Mail\AppointmentAccepted;
 use App\Mail\AppointmentCreated;
 use App\Mail\AppointmentRejected;
@@ -14,6 +19,7 @@ use App\Support\SafeMail;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 
 class AppointmentController extends Controller
 {
@@ -25,10 +31,12 @@ class AppointmentController extends Controller
     {
         abort_unless($barbershop->isVisibleTo(Auth::user()), 404);
 
-        // Ensure service belongs to barbershop
         if ($service->barbershop_id != $barbershop->id) {
             abort(404);
         }
+
+        $barbershop->loadMissing('schedules');
+        $service->setRelation('barbershop', $barbershop);
 
         abort_unless($service->isVisibleTo(Auth::user()), 404);
 
@@ -140,11 +148,12 @@ class AppointmentController extends Controller
         ));
     }
 
-    public function confirm(Request $request, Barbershop $barbershop)
+    public function confirm(ConfirmAppointmentRequest $request, Barbershop $barbershop)
     {
         abort_unless($barbershop->isVisibleTo(Auth::user()), 404);
 
-        $selection = $this->appointmentSelectionService->validateSelectionRequest($request, $barbershop);
+        $barbershop->loadMissing('schedules');
+        $selection = $this->appointmentSelectionService->validateSelectionData($request->validated(), $barbershop);
 
         if (! $this->appointmentSelectionService->isSlotAvailable($barbershop, $selection['startTime'], $selection['endTime'])) {
             return redirect()
@@ -167,45 +176,30 @@ class AppointmentController extends Controller
         ]);
     }
 
-    public function store(Request $request, Barbershop $barbershop)
+    public function store(StoreAppointmentRequest $request, Barbershop $barbershop, CreateAppointmentAction $createAppointment)
     {
         abort_unless($barbershop->isVisibleTo(Auth::user()), 404);
 
-        $selection = $this->appointmentSelectionService->validateSelectionRequest($request, $barbershop, [
-            'client_comment' => 'nullable|string|max:150',
-        ]);
+        $barbershop->loadMissing('schedules');
 
-        $validated = $selection['validated'];
-        $service = $selection['service'];
-        $startTime = $selection['startTime'];
-        $endTime = $selection['endTime'];
+        try {
+            $appointment = $createAppointment->execute($request->user(), $barbershop, $request->validated());
+        } catch (ValidationException $exception) {
+            $service = Service::where('id', $request->integer('service_id'))
+                ->where('barbershop_id', $barbershop->id)
+                ->first();
 
-        if (! $this->appointmentSelectionService->isSlotAvailable($barbershop, $startTime, $endTime)) {
+            if (! $service) {
+                throw $exception;
+            }
+
             return redirect()
                 ->route('appointments.create', ['barbershop' => $barbershop, 'service' => $service])
-                ->withErrors(['datetime' => 'El horario seleccionado no está disponible.'])
+                ->withErrors($exception->errors())
                 ->withInput();
         }
 
-        if ($this->appointmentSelectionService->clientHasAppointmentOnDate(Auth::id(), $startTime)) {
-            return redirect()
-                ->route('appointments.create', ['barbershop' => $barbershop, 'service' => $service])
-                ->withErrors(['datetime' => 'Ya tienes una cita reservada para este día.'])
-                ->withInput();
-        }
-
-        $appointment = Appointment::create([
-            'client_id' => Auth::id(),
-            'barbershop_id' => $barbershop->id,
-            'service_id' => $service->id,
-            'appointment_date' => $startTime->format('Y-m-d'),
-            'start_time' => $startTime->format('H:i:s'),
-            'end_time' => $endTime->format('H:i:s'),
-            'client_comment' => $validated['client_comment'] ?? null,
-            'status' => 'pending',
-        ]);
-
-        SafeMail::send($barbershop->barber->email, new AppointmentCreated($appointment), [
+        SafeMail::send($appointment->barbershop->barber->email, new AppointmentCreated($appointment), [
             'appointment_id' => $appointment->id,
             'barbershop_id' => $barbershop->id,
         ]);
@@ -218,6 +212,7 @@ class AppointmentController extends Controller
         $appointment->load('client', 'service', 'barbershop');
 
         $user = Auth::user();
+        $user->loadMissing('barbershop');
         $userBarbershop = $user->barbershop;
         $canViewAsBarber = $userBarbershop && $appointment->barbershop_id === $userBarbershop->id;
         $canViewAsClient = $appointment->client_id === $user->id;
@@ -234,6 +229,7 @@ class AppointmentController extends Controller
         $appointment->load('client', 'service', 'barbershop');
 
         $user = Auth::user();
+        $user->loadMissing('barbershop');
         $userBarbershop = $user->barbershop;
         $canViewAsBarber = $userBarbershop && $appointment->barbershop_id === $userBarbershop->id;
         $canViewAsClient = $appointment->client_id === $user->id;
@@ -261,7 +257,9 @@ class AppointmentController extends Controller
 
     public function barberAppointments(Request $request)
     {
-        $barbershop = Auth::user()->barbershop;
+        $user = Auth::user();
+        $user->loadMissing('barbershop');
+        $barbershop = $user->barbershop;
         if (! $barbershop) {
             abort(403, 'No tienes una barbería asignada.');
         }
@@ -289,10 +287,14 @@ class AppointmentController extends Controller
 
     public function barberAgenda(Request $request)
     {
-        $barbershop = Auth::user()->barbershop;
+        $user = Auth::user();
+        $user->loadMissing('barbershop');
+        $barbershop = $user->barbershop;
         if (! $barbershop) {
             abort(403, 'No tienes una barbería asignada.');
         }
+
+        $barbershop->loadMissing('schedules');
 
         $today = Carbon::today();
         $firstMonthStart = $today->copy()->startOfMonth();
@@ -427,34 +429,25 @@ class AppointmentController extends Controller
         ));
     }
 
-    public function updateStatus(Request $request, Appointment $appointment)
-    {
-        $barbershop = Auth::user()->barbershop;
+    public function updateStatus(
+        UpdateAppointmentStatusRequest $request,
+        Appointment $appointment,
+        UpdateAppointmentStatusAction $updateAppointmentStatus
+    ) {
+        $user = $request->user();
+        $user->loadMissing('barbershop');
+        $barbershop = $user->barbershop;
         if (! $barbershop || $appointment->barbershop_id != $barbershop->id) {
             abort(403);
         }
 
-        $validated = $request->validate([
-            'status' => 'required|in:accepted,rejected',
-            'rejection_reason' => 'nullable|string|max:300',
-            'barber_comment' => 'nullable|string|max:300',
-        ]);
-        $barberComment = $validated['barber_comment'] ?? $validated['rejection_reason'] ?? null;
+        $appointment = $updateAppointmentStatus->execute($appointment, $request->validated());
 
-        $appointment->update([
-            'status' => $validated['status'],
-            'barber_comment' => $barberComment,
-            'rejection_reason' => $validated['status'] === 'rejected'
-                ? $barberComment
-                : null,
-        ]);
-
-        // Enviar email al cliente
-        if ($validated['status'] === 'accepted') {
+        if ($appointment->status === 'accepted') {
             SafeMail::send($appointment->client->email, new AppointmentAccepted($appointment), [
                 'appointment_id' => $appointment->id,
             ]);
-        } elseif ($validated['status'] === 'rejected') {
+        } elseif ($appointment->status === 'rejected') {
             SafeMail::send($appointment->client->email, new AppointmentRejected($appointment), [
                 'appointment_id' => $appointment->id,
             ]);

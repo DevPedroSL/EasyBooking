@@ -134,7 +134,8 @@ class AppointmentSelectionService
             'datetime' => 'required|date_format:Y-m-d H:i',
         ], $extraRules))->validate();
 
-        $service = Service::where('id', $validated['service_id'])
+        $service = Service::with('barbershop:id,barber_id')
+            ->where('id', $validated['service_id'])
             ->where('barbershop_id', $barbershop->id)
             ->first();
 
@@ -169,6 +170,8 @@ class AppointmentSelectionService
 
     public function isSelectableSlot(Barbershop $barbershop, Service $service, Carbon $startTime): bool
     {
+        $barbershop->loadMissing('schedules');
+
         $bookingWindowStart = Carbon::today();
         $bookingWindowEnd = $bookingWindowStart->copy()->addMonthNoOverflow()->endOfMonth();
 

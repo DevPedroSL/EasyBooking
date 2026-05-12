@@ -22,6 +22,8 @@ return new class extends Migration
             $table->string('image_path')->nullable();
             $table->json('image_paths')->nullable();
             $table->timestamps();
+
+            $table->index(['barbershop_id', 'visibility', 'name'], 'services_barbershop_visibility_name_idx');
         });
     }
 

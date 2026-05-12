@@ -24,6 +24,9 @@ return new class extends Migration
             $table->text('rejection_reason')->nullable();
             $table->text('barber_comment')->nullable();
             $table->timestamps();
+
+            $table->index(['barbershop_id', 'appointment_date', 'status', 'start_time', 'end_time'], 'appointments_barbershop_date_status_time_idx');
+            $table->index(['client_id', 'appointment_date', 'status'], 'appointments_client_date_status_idx');
         });
     }
 

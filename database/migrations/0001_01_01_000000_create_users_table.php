@@ -23,6 +23,8 @@ return new class extends Migration
             $table->enum('role', ['admin', 'barber', 'customer'])->default('customer');
             $table->boolean('is_banned')->default(false);
             $table->timestamps();
+
+            $table->index('role', 'users_role_idx');
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
