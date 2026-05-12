@@ -8,6 +8,7 @@ use App\Models\Service;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class BarbershopSeeder extends Seeder
 {
@@ -29,11 +30,15 @@ class BarbershopSeeder extends Seeder
 
     private function seedPrimaryBarbershop(): void
     {
-        $barber = User::where('email', 'devpedrosl@gmail.com')->first();
-
-        if (! $barber) {
-            return;
-        }
+        $barber = User::updateOrCreate([
+            'email' => 'devpedrosl@gmail.com',
+        ], [
+            'name' => 'Barber User',
+            'phone' => '600000002',
+            'password' => Hash::make('123'),
+            'role' => 'barber',
+            'email_verified_at' => now(),
+        ]);
 
         $barbershop = Barbershop::updateOrCreate([
             'name' => 'Barberia 1',
