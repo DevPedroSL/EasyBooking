@@ -29,7 +29,7 @@ class BarbershopSeeder extends Seeder
 
     private function seedPrimaryBarbershop(): void
     {
-        $barber = User::where('email', 'barber@example.com')->first();
+        $barber = User::where('email', 'devpedrosl@gmail.com')->first();
 
         if (! $barber) {
             return;
@@ -43,6 +43,7 @@ class BarbershopSeeder extends Seeder
             'phone' => '612345678',
             'slot_interval_minutes' => 60,
             'visibility' => 'public',
+            'is_approved' => true,
         ]);
 
         $services = [
