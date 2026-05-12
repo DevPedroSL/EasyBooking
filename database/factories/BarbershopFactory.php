@@ -42,6 +42,7 @@ class BarbershopFactory extends Factory
             'phone' => fake()->numerify('6########'),
             'slot_interval_minutes' => 60,
             'visibility' => 'public',
+            'is_approved' => true,
         ];
     }
 

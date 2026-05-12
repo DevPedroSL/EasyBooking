@@ -10,10 +10,10 @@ use App\Models\Barbershop;
 use App\Models\Service;
 use App\Services\AppointmentPdfService;
 use App\Services\AppointmentSelectionService;
+use App\Support\SafeMail;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Mail;
 
 class AppointmentController extends Controller
 {
@@ -205,7 +205,10 @@ class AppointmentController extends Controller
             'status' => 'pending',
         ]);
 
-        Mail::to($barbershop->barber->email)->send(new AppointmentCreated($appointment));
+        SafeMail::send($barbershop->barber->email, new AppointmentCreated($appointment), [
+            'appointment_id' => $appointment->id,
+            'barbershop_id' => $barbershop->id,
+        ]);
 
         return redirect()->route('appointments.my')->with('success', 'Cita reservada exitosamente. Podras descargar el PDF cuando la barberia la acepte.');
     }
@@ -448,9 +451,13 @@ class AppointmentController extends Controller
 
         // Enviar email al cliente
         if ($validated['status'] === 'accepted') {
-            Mail::to($appointment->client->email)->send(new AppointmentAccepted($appointment));
+            SafeMail::send($appointment->client->email, new AppointmentAccepted($appointment), [
+                'appointment_id' => $appointment->id,
+            ]);
         } elseif ($validated['status'] === 'rejected') {
-            Mail::to($appointment->client->email)->send(new AppointmentRejected($appointment));
+            SafeMail::send($appointment->client->email, new AppointmentRejected($appointment), [
+                'appointment_id' => $appointment->id,
+            ]);
         }
 
         return redirect()->back()->with('success', 'Estado de la cita actualizado.');

@@ -18,6 +18,7 @@ class Barbershop extends Model
         'phone',
         'slot_interval_minutes',
         'visibility',
+        'is_approved',
         'image_path',
         'image_paths',
     ];
@@ -25,6 +26,7 @@ class Barbershop extends Model
     protected $casts = [
         'image_paths' => 'array',
         'slot_interval_minutes' => 'integer',
+        'is_approved' => 'boolean',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -59,12 +61,14 @@ class Barbershop extends Model
 
     public function scopePubliclyVisible(Builder $query): Builder
     {
-        return $query->where('visibility', 'public');
+        return $query
+            ->where('is_approved', true)
+            ->where('visibility', 'public');
     }
 
     public function isVisibleTo(?User $user): bool
     {
-        if ($this->visibility === 'public') {
+        if ($this->is_approved && $this->visibility === 'public') {
             return true;
         }
 

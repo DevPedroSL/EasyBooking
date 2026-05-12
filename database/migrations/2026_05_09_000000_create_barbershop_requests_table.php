@@ -14,7 +14,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('address');
             $table->string('phone', 20);
-            $table->string('visibility')->default('public');
+            $table->string('visibility')->default('private');
             $table->string('status')->default('pending');
             $table->text('rejection_reason')->nullable();
             $table->foreignId('reviewed_by')->nullable()->constrained('users')->nullOnDelete();

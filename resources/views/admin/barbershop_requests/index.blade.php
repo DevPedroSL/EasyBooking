@@ -40,7 +40,7 @@
                         <td class="px-4 py-4 text-sm">
                             <p class="font-bold text-gray-900">{{ $request->name }}</p>
                             <p class="mt-1 max-w-sm text-gray-600">{{ $request->address }}</p>
-                            <p class="mt-1 text-xs font-bold text-gray-500">Visibilidad: {{ $request->visibility === 'public' ? 'Publica' : 'Privada' }}</p>
+                            <p class="mt-1 text-xs font-bold text-gray-500">Visibilidad inicial: Privada hasta aprobacion</p>
                         </td>
                         <td class="px-4 py-4 text-sm">
                             <p class="font-bold text-gray-900">{{ $request->requester?->name ?? 'Usuario eliminado' }}</p>

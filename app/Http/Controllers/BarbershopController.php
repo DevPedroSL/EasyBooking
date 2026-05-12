@@ -8,8 +8,9 @@ use App\Models\BarbershopRequest;
 use App\Models\Service;
 use App\Models\User;
 use App\Services\StoredImageService;
+use App\Support\SafeMail;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -23,7 +24,7 @@ class BarbershopController extends Controller
 
     private function currentUserBarbershop()
     {
-        return auth()->user()->barbershop;
+        return auth()->user()->barbershop()->first();
     }
 
     private function redirectWithoutBarbershop()
@@ -35,7 +36,7 @@ class BarbershopController extends Controller
     {
         $user = auth()->user();
 
-        if ($user->barbershop) {
+        if ($user->barbershop()->exists()) {
             return redirect()->route('barbershops.dashboard');
         }
 
@@ -50,7 +51,7 @@ class BarbershopController extends Controller
     {
         $user = auth()->user();
 
-        if ($user->barbershop) {
+        if ($user->barbershop()->exists()) {
             return redirect()->route('barbershops.dashboard');
         }
 
@@ -70,14 +71,29 @@ class BarbershopController extends Controller
             ],
             'address' => 'required|string|max:255',
             'phone' => 'required|string|max:20',
-            'visibility' => 'required|in:public,private',
         ]);
 
-        $barbershopRequest = $user->barbershopRequests()->create($validated);
+        $validated['visibility'] = 'private';
+
+        $barbershopRequest = DB::transaction(function () use ($user, $validated) {
+            $barbershop = $user->barbershop()->create([
+                'name' => $validated['name'],
+                'address' => $validated['address'],
+                'phone' => $validated['phone'],
+                'visibility' => 'private',
+                'is_approved' => false,
+            ]);
+
+            return $user->barbershopRequests()->create(array_merge($validated, [
+                'visibility' => $barbershop->visibility,
+            ]));
+        });
 
         $adminEmails = User::where('role', 'admin')->pluck('email')->all();
         if ($adminEmails !== []) {
-            Mail::to($adminEmails)->send(new BarbershopRequestCreated($barbershopRequest));
+            SafeMail::send($adminEmails, new BarbershopRequestCreated($barbershopRequest), [
+                'barbershop_request_id' => $barbershopRequest->id,
+            ]);
         }
 
         return redirect()
@@ -134,6 +150,12 @@ class BarbershopController extends Controller
             'remove_gallery_images' => 'nullable|array',
             'remove_gallery_images.*' => 'integer',
         ]);
+
+        if (! $barbershop->is_approved && $validated['visibility'] === 'public') {
+            return back()
+                ->withErrors(['visibility' => 'Un administrador debe aprobar la barberia antes de publicarla.'])
+                ->withInput();
+        }
 
         $barbershop->update([
             'name' => $validated['name'],

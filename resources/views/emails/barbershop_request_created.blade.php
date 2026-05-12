@@ -15,7 +15,7 @@
             <p><strong>Barberia:</strong> {{ $barbershopRequest->name }}</p>
             <p><strong>Direccion:</strong> {{ $barbershopRequest->address }}</p>
             <p><strong>Telefono:</strong> {{ $barbershopRequest->phone }}</p>
-            <p><strong>Visibilidad:</strong> {{ $barbershopRequest->visibility === 'public' ? 'Publica' : 'Privada' }}</p>
+            <p><strong>Visibilidad inicial:</strong> Privada hasta aprobacion del administrador</p>
             <p><strong>Solicitante:</strong> {{ $requester->name }}</p>
             <p><strong>Email:</strong> {{ $requester->email }}</p>
         </div>

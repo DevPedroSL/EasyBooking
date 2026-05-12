@@ -199,10 +199,18 @@
                         <div style="grid-column: 1 / -1;">
                             <label for="visibility" class="mb-2 block text-sm font-bold text-gray-900">Visibilidad</label>
                             <select name="visibility" id="visibility" class="w-full rounded-xl border border-gray-300 px-4 py-3 shadow-sm focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-200" required>
-                                <option value="public" @selected(old('visibility', $barbershop->visibility) === 'public')>Publica</option>
+                                @if($barbershop->is_approved)
+                                    <option value="public" @selected(old('visibility', $barbershop->visibility) === 'public')>Publica</option>
+                                @endif
                                 <option value="private" @selected(old('visibility', $barbershop->visibility) === 'private')>Privada</option>
                             </select>
-                            <p class="mt-2 text-xs font-medium text-gray-500">Las barberias publicas aparecen en Explorar. Las privadas solo las ve su barbero y el admin.</p>
+                            <p class="mt-2 text-xs font-medium text-gray-500">
+                                @if($barbershop->is_approved)
+                                    Las barberias publicas aparecen en Explorar. Las privadas solo las ve su barbero y el admin.
+                                @else
+                                    Podras publicarla cuando un administrador apruebe la solicitud. Mientras tanto, puedes editar sus datos.
+                                @endif
+                            </p>
                             @error('visibility') <p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p> @enderror
                         </div>
                     </div>

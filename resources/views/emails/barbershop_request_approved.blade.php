@@ -18,6 +18,6 @@
             <p><strong>Visibilidad:</strong> {{ ($barbershop?->visibility ?? $barbershopRequest->visibility) === 'public' ? 'Publica' : 'Privada' }}</p>
         </div>
 
-        <p>Ya puedes entrar en tu panel de barberia para completar fotos, horarios y servicios.</p>
+        <p>Ya puedes entrar en tu panel de barberia para completar fotos, horarios y servicios. La barberia empieza como privada y puedes publicarla cuando este lista.</p>
     </div>
 @endsection

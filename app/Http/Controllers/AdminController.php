@@ -8,11 +8,11 @@ use App\Models\Barbershop;
 use App\Models\BarbershopRequest;
 use App\Models\User;
 use App\Services\StoredImageService;
+use App\Support\SafeMail;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Symfony\Component\Process\Process;
@@ -149,27 +149,36 @@ class AdminController extends Controller
                 ->with('error', 'Esta solicitud ya fue revisada.');
         }
 
-        if (Barbershop::where('name', $barbershopRequest->name)->exists()) {
+        if (Barbershop::where('name', $barbershopRequest->name)
+            ->where('barber_id', '!=', $barbershopRequest->requester_id)
+            ->exists()) {
             return redirect()
                 ->route('admin.barbershop-requests.index')
                 ->with('error', 'Ya existe una barbería con ese nombre.');
         }
 
-        if ($barbershopRequest->requester?->barbershop) {
-            return redirect()
-                ->route('admin.barbershop-requests.index')
-                ->with('error', 'Este usuario ya tiene una barbería asignada.');
-        }
-
         $barbershop = DB::transaction(function () use ($barbershopRequest) {
             $requester = User::whereKey($barbershopRequest->requester_id)->lockForUpdate()->firstOrFail();
 
-            $barbershop = $requester->barbershop()->create([
-                'name' => $barbershopRequest->name,
-                'address' => $barbershopRequest->address,
-                'phone' => $barbershopRequest->phone,
-                'visibility' => $barbershopRequest->visibility,
-            ]);
+            $barbershop = $requester->barbershop()->first();
+
+            if ($barbershop) {
+                $barbershop->update([
+                    'name' => $barbershopRequest->name,
+                    'address' => $barbershopRequest->address,
+                    'phone' => $barbershopRequest->phone,
+                    'visibility' => 'private',
+                    'is_approved' => true,
+                ]);
+            } else {
+                $barbershop = $requester->barbershop()->create([
+                    'name' => $barbershopRequest->name,
+                    'address' => $barbershopRequest->address,
+                    'phone' => $barbershopRequest->phone,
+                    'visibility' => 'private',
+                    'is_approved' => true,
+                ]);
+            }
 
             $requester->forceFill([
                 'role' => 'barber',
@@ -180,13 +189,17 @@ class AdminController extends Controller
                 'rejection_reason' => null,
                 'reviewed_by' => auth()->id(),
                 'reviewed_at' => now(),
+                'visibility' => 'private',
             ]);
 
             return $barbershop;
         });
 
         $barbershopRequest->refresh()->load('requester');
-        Mail::to($barbershopRequest->requester->email)->send(new BarbershopRequestApproved($barbershopRequest, $barbershop));
+        SafeMail::send($barbershopRequest->requester->email, new BarbershopRequestApproved($barbershopRequest, $barbershop), [
+            'barbershop_request_id' => $barbershopRequest->id,
+            'barbershop_id' => $barbershop->id,
+        ]);
 
         return redirect()
             ->route('admin.barbershop-requests.index')
@@ -215,7 +228,9 @@ class AdminController extends Controller
         ]);
 
         $barbershopRequest->load('requester');
-        Mail::to($barbershopRequest->requester->email)->send(new BarbershopRequestRejected($barbershopRequest));
+        SafeMail::send($barbershopRequest->requester->email, new BarbershopRequestRejected($barbershopRequest), [
+            'barbershop_request_id' => $barbershopRequest->id,
+        ]);
 
         return redirect()
             ->route('admin.barbershop-requests.index')

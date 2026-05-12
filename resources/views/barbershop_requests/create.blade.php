@@ -31,7 +31,7 @@
             <div class="mt-4 space-y-2 text-sm font-semibold text-gray-700">
                 <p>{{ $latestRequest->address }}</p>
                 <p>{{ $latestRequest->phone }}</p>
-                <p>Visibilidad: {{ $latestRequest->visibility === 'public' ? 'Publica' : 'Privada' }}</p>
+                <p>Visibilidad: Privada hasta que el administrador la apruebe.</p>
             </div>
             <p class="mt-6 text-gray-600">Tu solicitud esta esperando revision del administrador.</p>
         </section>
@@ -66,14 +66,9 @@
                 @error('phone') <p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p> @enderror
             </div>
 
-            <div>
-                <label for="visibility" class="mb-2 block text-sm font-bold text-gray-900">Visibilidad inicial</label>
-                <select id="visibility" name="visibility" class="w-full rounded-lg border border-gray-300 px-4 py-3 shadow-sm focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-200" required>
-                    <option value="public" @selected(old('visibility', 'public') === 'public')>Publica</option>
-                    <option value="private" @selected(old('visibility') === 'private')>Privada</option>
-                </select>
-                @error('visibility') <p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p> @enderror
-            </div>
+            <p class="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-700">
+                La barberia se creara como privada. Cuando el administrador apruebe la solicitud, podras publicarla desde tu panel.
+            </p>
 
             <div class="flex flex-col gap-3 sm:flex-row sm:justify-end">
                 <a href="{{ route('inicio') }}" class="inline-flex min-h-12 items-center justify-center rounded-lg border border-gray-300 px-6 py-3 text-sm font-bold text-gray-700 transition hover:bg-gray-100">Cancelar</a>
