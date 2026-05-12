@@ -9,6 +9,7 @@ use App\Models\BarbershopRequest;
 use App\Models\User;
 use App\Services\StoredImageService;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -160,10 +161,10 @@ class AdminController extends Controller
                 ->with('error', 'Este usuario ya tiene una barbería asignada.');
         }
 
-        DB::transaction(function () use ($barbershopRequest) {
+        $barbershop = DB::transaction(function () use ($barbershopRequest) {
             $requester = User::whereKey($barbershopRequest->requester_id)->lockForUpdate()->firstOrFail();
 
-            $requester->barbershop()->create([
+            $barbershop = $requester->barbershop()->create([
                 'name' => $barbershopRequest->name,
                 'address' => $barbershopRequest->address,
                 'phone' => $barbershopRequest->phone,
@@ -180,10 +181,12 @@ class AdminController extends Controller
                 'reviewed_by' => auth()->id(),
                 'reviewed_at' => now(),
             ]);
+
+            return $barbershop;
         });
 
         $barbershopRequest->refresh()->load('requester');
-        Mail::to($barbershopRequest->requester->email)->send(new BarbershopRequestApproved($barbershopRequest));
+        Mail::to($barbershopRequest->requester->email)->send(new BarbershopRequestApproved($barbershopRequest, $barbershop));
 
         return redirect()
             ->route('admin.barbershop-requests.index')
@@ -324,53 +327,6 @@ class AdminController extends Controller
         DB::table('sessions')->where('user_id', $user->id)->delete();
     }
 
-    public function backup()
-    {
-        $this->ensureAdmin();
-
-        $backupPath = null;
-        $dumpFile = null;
-        $zip = new \ZipArchive;
-        $zipOpen = false;
-
-        try {
-            $backupDir = $this->backupDirectory();
-
-            $timestamp = now()->format('Y-m-d_H-i-s');
-            $backupFileName = "backup_{$timestamp}.zip";
-            $backupPath = "$backupDir/$backupFileName";
-            $dumpFile = "$backupDir/database_dump_{$timestamp}.sql";
-
-            if ($zip->open($backupPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
-                throw new \Exception('No se pudo crear el archivo ZIP');
-            }
-            $zipOpen = true;
-
-            $this->dumpDatabaseToFile($dumpFile);
-            $zip->addFile($dumpFile, 'database_dump.sql');
-            $this->addProjectFilesToZip($zip);
-
-            $zip->close();
-            $zipOpen = false;
-
-            return response()->download($backupPath, $backupFileName)->deleteFileAfterSend(true);
-        } catch (\Throwable $e) {
-            if ($backupPath && file_exists($backupPath)) {
-                @unlink($backupPath);
-            }
-
-            return $this->backupFailureResponse($e, 'Error al crear la copia de seguridad.');
-        } finally {
-            if ($zipOpen) {
-                $zip->close();
-            }
-
-            if ($dumpFile && file_exists($dumpFile)) {
-                @unlink($dumpFile);
-            }
-        }
-    }
-
     public function backupDatabase()
     {
         $this->ensureAdmin();
@@ -396,6 +352,39 @@ class AdminController extends Controller
         }
     }
 
+    public function restoreDatabase(Request $request)
+    {
+        $this->ensureAdmin();
+
+        $validated = $request->validate([
+            'database_backup' => ['required', 'file', 'extensions:sql,txt', 'max:204800'],
+            'confirm_restore' => ['accepted'],
+        ]);
+
+        /** @var UploadedFile $backupFile */
+        $backupFile = $validated['database_backup'];
+        $restorePath = null;
+
+        try {
+            $backupDir = $this->backupDirectory();
+            $restorePath = $backupFile->move(
+                $backupDir,
+                'restore_database_'.now()->format('Y-m-d_H-i-s').'.sql'
+            )->getPathname();
+
+            $this->restoreDatabaseFromFile($restorePath);
+
+            return redirect()->route('admin.dashboard')
+                ->with('success', 'Base de datos importada correctamente.');
+        } catch (\Throwable $e) {
+            return $this->backupFailureResponse($e, 'Error al importar el backup de la base de datos.');
+        } finally {
+            if ($restorePath && file_exists($restorePath)) {
+                @unlink($restorePath);
+            }
+        }
+    }
+
     private function backupDirectory(): string
     {
         $backupDir = storage_path('app/backups');
@@ -408,38 +397,25 @@ class AdminController extends Controller
 
     private function dumpDatabaseToFile(string $dumpFile): void
     {
-        $connection = config('database.default');
-        if (! in_array($connection, ['mysql', 'mariadb'], true)) {
-            throw new \RuntimeException('El backup automatico solo soporta conexiones mysql o mariadb.');
-        }
-
-        $config = config("database.connections.$connection");
-        $database = (string) ($config['database'] ?? '');
-        $username = (string) ($config['username'] ?? '');
-        $password = (string) ($config['password'] ?? '');
-        $host = (string) ($config['host'] ?? '127.0.0.1');
-        $port = (string) ($config['port'] ?? '3306');
-
-        if ($database === '' || $username === '') {
-            throw new \RuntimeException('La conexion de base de datos no esta configurada para backup.');
-        }
+        $config = $this->databaseBackupConfig();
 
         $process = new Process([
             'mysqldump',
             '--single-transaction',
             '--quick',
             '--skip-lock-tables',
-            '--host='.$host,
-            '--port='.$port,
-            '--user='.$username,
-            $database,
+            '--default-character-set=utf8mb4',
+            '--host='.$config['host'],
+            '--port='.$config['port'],
+            '--user='.$config['username'],
+            $config['database'],
         ]);
 
-        if ($password !== '') {
-            $process->setEnv(['MYSQL_PWD' => $password]);
+        if ($config['password'] !== '') {
+            $process->setEnv(['MYSQL_PWD' => $config['password']]);
         }
 
-        $process->setTimeout(120);
+        $process->setTimeout(600);
         $errorOutput = '';
         $handle = fopen($dumpFile, 'wb');
 
@@ -468,56 +444,66 @@ class AdminController extends Controller
         }
     }
 
-    private function addProjectFilesToZip(\ZipArchive $zip): void
+    private function restoreDatabaseFromFile(string $dumpFile): void
     {
-        $projectRoot = base_path();
-        $filesToBackup = [
-            'app',
-            'config',
-            'database/migrations',
-            'database/seeders',
-            'routes',
-            'resources/views',
-            'resources/js',
-            'resources/css',
-            '.env.example',
-            'composer.json',
-            'composer.lock',
-            'package.json',
-            'package-lock.json',
-        ];
+        $config = $this->databaseBackupConfig();
+        $process = new Process([
+            'mysql',
+            '--default-character-set=utf8mb4',
+            '--host='.$config['host'],
+            '--port='.$config['port'],
+            '--user='.$config['username'],
+            $config['database'],
+        ]);
 
-        foreach ($filesToBackup as $fileOrDir) {
-            $fullPath = "$projectRoot/$fileOrDir";
-
-            if (is_file($fullPath)) {
-                $zip->addFile($fullPath, $fileOrDir);
-            } elseif (is_dir($fullPath)) {
-                $this->addDirToZip($zip, $fullPath, $fileOrDir);
-            }
+        if ($config['password'] !== '') {
+            $process->setEnv(['MYSQL_PWD' => $config['password']]);
         }
 
-        // Agregar imágenes públicas
-        $publicImagesPath = "$projectRoot/storage/app/public";
-        if (is_dir($publicImagesPath)) {
-            $this->addDirToZip($zip, $publicImagesPath, 'storage/app/public');
+        $handle = fopen($dumpFile, 'rb');
+
+        if ($handle === false) {
+            throw new \RuntimeException('No se pudo leer el archivo de backup.');
+        }
+
+        $process->setTimeout(600);
+        $process->setInput($handle);
+        try {
+            $process->run();
+        } finally {
+            fclose($handle);
+        }
+
+        if (! $process->isSuccessful()) {
+            throw new \RuntimeException(trim($process->getErrorOutput()) ?: 'No se pudo importar el backup de la base de datos.');
         }
     }
 
-    private function addDirToZip(\ZipArchive $zip, string $dir, string $zipPath): void
+    /**
+     * @return array{database: string, username: string, password: string, host: string, port: string}
+     */
+    private function databaseBackupConfig(): array
     {
-        $files = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($dir, \RecursiveDirectoryIterator::SKIP_DOTS),
-            \RecursiveIteratorIterator::SELF_FIRST
-        );
-
-        foreach ($files as $file) {
-            if ($file->isFile()) {
-                $filePath = $file->getRealPath();
-                $relativePath = $zipPath.'/'.substr($filePath, strlen($dir) + 1);
-                $zip->addFile($filePath, str_replace('\\', '/', $relativePath));
-            }
+        $connection = config('database.default');
+        if (! in_array($connection, ['mysql', 'mariadb'], true)) {
+            throw new \RuntimeException('El backup automatico solo soporta conexiones mysql o mariadb.');
         }
+
+        $config = config("database.connections.$connection");
+        $database = (string) ($config['database'] ?? '');
+        $username = (string) ($config['username'] ?? '');
+
+        if ($database === '' || $username === '') {
+            throw new \RuntimeException('La conexion de base de datos no esta configurada para backup.');
+        }
+
+        return [
+            'database' => $database,
+            'username' => $username,
+            'password' => (string) ($config['password'] ?? ''),
+            'host' => (string) ($config['host'] ?? '127.0.0.1'),
+            'port' => (string) ($config['port'] ?? '3306'),
+        ];
     }
 
     private function backupFailureResponse(\Throwable $e, string $message)

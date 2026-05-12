@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -36,6 +37,11 @@ return new class extends Migration
 
     public function down(): void
     {
+        $this->ensureForeignKeyIndex('appointments', 'barbershop_id', 'appointments_barbershop_date_status_time_idx');
+        $this->ensureForeignKeyIndex('appointments', 'client_id', 'appointments_client_date_status_idx');
+        $this->ensureForeignKeyIndex('schedules', 'barbershop_id', 'schedules_barbershop_day_start_idx');
+        $this->ensureForeignKeyIndex('services', 'barbershop_id', 'services_barbershop_visibility_name_idx');
+
         Schema::table('appointments', function (Blueprint $table) {
             $table->dropIndex('appointments_barbershop_date_status_time_idx');
             $table->dropIndex('appointments_client_date_status_idx');
@@ -59,6 +65,25 @@ return new class extends Migration
 
         Schema::table('users', function (Blueprint $table) {
             $table->dropIndex('users_role_idx');
+        });
+    }
+
+    private function ensureForeignKeyIndex(string $tableName, string $columnName, string $indexBeingDropped): void
+    {
+        $hasSupportingIndex = DB::table('information_schema.statistics')
+            ->where('table_schema', DB::getDatabaseName())
+            ->where('table_name', $tableName)
+            ->where('column_name', $columnName)
+            ->where('seq_in_index', 1)
+            ->where('index_name', '!=', $indexBeingDropped)
+            ->exists();
+
+        if ($hasSupportingIndex) {
+            return;
+        }
+
+        Schema::table($tableName, function (Blueprint $table) use ($columnName): void {
+            $table->index($columnName);
         });
     }
 };

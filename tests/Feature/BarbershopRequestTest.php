@@ -113,8 +113,34 @@ class BarbershopRequestTest extends TestCase
 
         Mail::assertSent(BarbershopRequestApproved::class, function (BarbershopRequestApproved $mail) use ($customer) {
             return $mail->hasTo($customer->email)
-                && $mail->barbershopRequest->name === 'Barberia Aprobada';
+                && $mail->barbershopRequest->name === 'Barberia Aprobada'
+                && $mail->barbershop?->name === 'Barberia Aprobada';
         });
+    }
+
+    public function test_barbershop_request_approved_email_renders(): void
+    {
+        $customer = User::factory()->customer()->create();
+        $barbershopRequest = BarbershopRequest::create([
+            'requester_id' => $customer->id,
+            'name' => 'Barberia Render',
+            'address' => 'Calle Render 4',
+            'phone' => '612345678',
+            'visibility' => 'public',
+            'status' => 'approved',
+        ]);
+        $barbershop = Barbershop::factory()->create([
+            'barber_id' => $customer->id,
+            'name' => 'Barberia Render',
+            'address' => 'Calle Render 4',
+            'phone' => '612345678',
+            'visibility' => 'public',
+        ]);
+
+        $html = (new BarbershopRequestApproved($barbershopRequest->load('requester'), $barbershop))->render();
+
+        $this->assertStringContainsString('Barberia Render', $html);
+        $this->assertStringContainsString('Solicitud aceptada', $html);
     }
 
     public function test_admin_can_reject_a_barbershop_request(): void

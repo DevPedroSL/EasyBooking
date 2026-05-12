@@ -106,8 +106,8 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::patch('/users/{user}/unban', [AdminController::class, 'usersUnban'])->name('users.unban');
     Route::delete('/users/{user}', [AdminController::class, 'usersDestroy'])->name('users.destroy');
 
-    Route::post('/backups', [AdminController::class, 'backup'])->name('backup');
     Route::post('/backups/database', [AdminController::class, 'backupDatabase'])->name('backup.database');
+    Route::post('/backups/database/restore', [AdminController::class, 'restoreDatabase'])->name('backup.database.restore');
 });
 
 require __DIR__.'/auth.php';

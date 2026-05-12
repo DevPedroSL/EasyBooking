@@ -17,7 +17,7 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         User::updateOrCreate([
-            'email' => 'admin@example.com',
+            'email' => 'devpedro17@gmail.com',
         ], [
             'name' => 'Admin User',
             'phone' => '600000001',
@@ -27,7 +27,7 @@ class UserSeeder extends Seeder
         ]);
 
         User::updateOrCreate([
-            'email' => 'customer@example.com',
+            'email' => 'easybookingpedro@gmail.com',
         ], [
             'name' => 'Customer User',
             'phone' => '600000005',
@@ -37,7 +37,7 @@ class UserSeeder extends Seeder
         ]);
 
         User::updateOrCreate([
-            'email' => 'barber@example.com',
+            'email' => 'devpedrosl@gmail.com',
         ], [
             'name' => 'Barber User',
             'phone' => '600000002',

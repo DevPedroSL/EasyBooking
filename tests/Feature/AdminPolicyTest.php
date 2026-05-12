@@ -60,11 +60,16 @@ class AdminPolicyTest extends TestCase
         $this
             ->actingAs($admin)
             ->get('/admin/backups')
-            ->assertMethodNotAllowed();
+            ->assertNotFound();
 
         $this
             ->actingAs($admin)
             ->get('/admin/backups/database')
+            ->assertMethodNotAllowed();
+
+        $this
+            ->actingAs($admin)
+            ->get('/admin/backups/database/restore')
             ->assertMethodNotAllowed();
     }
 
@@ -77,8 +82,12 @@ class AdminPolicyTest extends TestCase
             ->get(route('admin.dashboard'))
             ->assertOk()
             ->assertSee('method="POST"', false)
-            ->assertSee(route('admin.backup', absolute: false), false)
             ->assertSee(route('admin.backup.database', absolute: false), false)
+            ->assertSee(route('admin.backup.database.restore', absolute: false), false)
+            ->assertSee('enctype="multipart/form-data"', false)
+            ->assertSee('name="database_backup"', false)
+            ->assertSee('name="confirm_restore"', false)
+            ->assertDontSee('Descargar copia completa', false)
             ->assertSee('name="_token"', false);
     }
 }

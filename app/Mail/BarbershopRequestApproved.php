@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Models\Barbershop;
 use App\Models\BarbershopRequest;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
@@ -13,7 +14,10 @@ class BarbershopRequestApproved extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public function __construct(public BarbershopRequest $barbershopRequest)
+    public function __construct(
+        public BarbershopRequest $barbershopRequest,
+        public ?Barbershop $barbershop = null
+    )
     {
     }
 
@@ -30,6 +34,7 @@ class BarbershopRequestApproved extends Mailable
             view: 'emails.barbershop_request_approved',
             with: [
                 'barbershopRequest' => $this->barbershopRequest,
+                'barbershop' => $this->barbershop,
                 'requester' => $this->barbershopRequest->requester,
             ],
         );
