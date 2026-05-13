@@ -40,7 +40,6 @@
                         <td class="px-4 py-4 text-sm">
                             <p class="font-bold text-gray-900">{{ $request->name }}</p>
                             <p class="mt-1 max-w-sm text-gray-600">{{ $request->address }}</p>
-                            <p class="mt-1 text-xs font-bold text-gray-500">Visibilidad inicial: Privada hasta aprobacion</p>
                         </td>
                         <td class="px-4 py-4 text-sm">
                             <p class="font-bold text-gray-900">{{ $request->requester?->name ?? 'Usuario eliminado' }}</p>
@@ -74,20 +73,20 @@
                         </td>
                         <td class="px-4 py-4 text-sm">
                             @if($request->status === 'pending')
-                                <div class="grid gap-3">
+                                <div class="flex flex-col gap-2 xl:flex-row xl:items-center">
                                     <form action="{{ route('admin.barbershop-requests.approve', $request) }}" method="POST">
                                         @csrf
                                         @method('PATCH')
-                                        <button type="submit" class="inline-flex w-full items-center justify-center rounded-lg bg-green-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-green-700">
+                                        <button type="submit" class="inline-flex min-h-8 items-center justify-center rounded-md bg-green-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-green-700">
                                             Aceptar
                                         </button>
                                     </form>
 
-                                    <form action="{{ route('admin.barbershop-requests.reject', $request) }}" method="POST" class="grid gap-2">
+                                    <form action="{{ route('admin.barbershop-requests.reject', $request) }}" method="POST" class="flex flex-col gap-2 sm:flex-row sm:items-center">
                                         @csrf
                                         @method('PATCH')
-                                        <textarea name="rejection_reason" rows="2" maxlength="1000" placeholder="Motivo opcional" class="min-w-64 rounded-lg border border-gray-300 px-3 py-2 text-xs shadow-sm focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-200"></textarea>
-                                        <button type="submit" class="inline-flex w-full items-center justify-center rounded-lg bg-red-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-red-700">
+                                        <input name="rejection_reason" maxlength="1000" placeholder="Motivo opcional" class="h-8 w-40 rounded-md border border-gray-300 px-2 text-xs shadow-sm focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-200">
+                                        <button type="submit" class="inline-flex min-h-8 items-center justify-center rounded-md bg-red-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-red-700">
                                             Rechazar
                                         </button>
                                     </form>

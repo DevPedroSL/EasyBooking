@@ -48,7 +48,10 @@ class AdminController extends Controller
     {
         $this->ensureAdmin();
 
-        $barbershops = Barbershop::with('barber')->latest()->get();
+        $barbershops = Barbershop::with('barber')
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->get();
 
         return view('admin.barbershops.index', compact('barbershops'));
     }
@@ -67,7 +70,7 @@ class AdminController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'address' => 'required|string|max:255',
-            'phone' => 'required|string|max:20',
+            'phone' => ['required', 'string', 'max:20', 'regex:/^[0-9]+$/'],
             'visibility' => 'required|in:public,private',
             'image' => 'nullable|image|max:3072',
             'remove_image' => 'nullable|boolean',
@@ -263,7 +266,7 @@ class AdminController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,'.$user->id,
-            'phone' => 'required|string|max:20',
+            'phone' => ['required', 'string', 'max:20', 'regex:/^[0-9]+$/'],
             'role' => 'required|in:admin,barber,customer',
             'is_banned' => 'nullable|boolean',
         ]);

@@ -35,7 +35,7 @@
 
       <div class="mb-6">
         <label for="phone" class="block text-sm font-bold text-gray-900 mb-2">Teléfono</label>
-        <input type="text" id="phone" name="phone" value="{{ old('phone', $barbershop->phone) }}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-600 focus:border-transparent" required>
+        <input type="tel" id="phone" name="phone" value="{{ old('phone', $barbershop->phone) }}" inputmode="numeric" pattern="[0-9]*" maxlength="20" data-numeric-input class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-600 focus:border-transparent" required>
         @error('phone')
           <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
         @enderror

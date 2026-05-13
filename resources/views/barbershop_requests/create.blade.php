@@ -62,7 +62,7 @@
 
             <div>
                 <label for="phone" class="mb-2 block text-sm font-bold text-gray-900">Telefono</label>
-                <input id="phone" name="phone" type="text" value="{{ old('phone') }}" class="w-full rounded-lg border border-gray-300 px-4 py-3 shadow-sm focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-200" required>
+                <input id="phone" name="phone" type="tel" value="{{ old('phone') }}" inputmode="numeric" pattern="[0-9]*" maxlength="20" data-numeric-input class="w-full rounded-lg border border-gray-300 px-4 py-3 shadow-sm focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-200" required>
                 @error('phone') <p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p> @enderror
             </div>
 

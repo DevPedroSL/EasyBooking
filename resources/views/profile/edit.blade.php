@@ -77,10 +77,14 @@
                         <input
                             id="phone"
                             name="phone"
-                            type="text"
+                            type="tel"
                             value="{{ old('phone', $user->phone) }}"
                             required
                             autocomplete="tel"
+                            inputmode="numeric"
+                            pattern="[0-9]*"
+                            maxlength="20"
+                            data-numeric-input
                             class="w-full rounded-lg border border-gray-300 px-4 py-3 shadow-sm focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-200"
                         >
                         @error('phone')

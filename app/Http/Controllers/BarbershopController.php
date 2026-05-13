@@ -72,7 +72,7 @@ class BarbershopController extends Controller
                 Rule::unique('barbershop_requests', 'name')->where(fn ($query) => $query->where('status', 'pending')),
             ],
             'address' => 'required|string|max:255',
-            'phone' => 'required|string|max:20',
+            'phone' => ['required', 'string', 'max:20', 'regex:/^[0-9]+$/'],
         ]);
 
         $validated['visibility'] = 'private';
@@ -143,7 +143,7 @@ class BarbershopController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:barbershops,name,'.$barbershop->id,
             'address' => 'required|string|max:255',
-            'phone' => 'required|string|max:20',
+            'phone' => ['required', 'string', 'max:20', 'regex:/^[0-9]+$/'],
             'visibility' => 'required|in:public,private',
             'image' => 'nullable|image|max:3072',
             'remove_image' => 'nullable|boolean',

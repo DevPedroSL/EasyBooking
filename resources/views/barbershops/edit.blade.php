@@ -192,7 +192,7 @@
 
                         <div>
                             <label for="phone" class="mb-2 block text-sm font-bold text-gray-900">Telefono</label>
-                            <input type="text" name="phone" id="phone" value="{{ old('phone', $barbershop->phone) }}" class="w-full rounded-xl border border-gray-300 px-4 py-3 shadow-sm focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-200" required>
+                            <input type="tel" name="phone" id="phone" value="{{ old('phone', $barbershop->phone) }}" inputmode="numeric" pattern="[0-9]*" maxlength="20" data-numeric-input class="w-full rounded-xl border border-gray-300 px-4 py-3 shadow-sm focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-200" required>
                             @error('phone') <p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p> @enderror
                         </div>
 

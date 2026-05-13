@@ -3,34 +3,11 @@
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\BarbershopController;
+use App\Http\Controllers\InicioController;
 use App\Http\Controllers\ProfileController;
-use App\Models\Barbershop;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function (Request $request) {
-    $name = trim((string) $request->query('name', ''));
-    $address = trim((string) $request->query('address', ''));
-
-    $cacheVersion = Cache::get('public_barbershops_version', '1');
-    $cacheKey = 'public_barbershops:'.$cacheVersion.':'.md5(json_encode([$name, $address]));
-
-    $barbershops = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($name, $address) {
-        return Barbershop::query()
-            ->publiclyVisible()
-            ->when($name !== '', function ($query) use ($name) {
-                $query->where('name', 'like', '%'.$name.'%');
-            })
-            ->when($address !== '', function ($query) use ($address) {
-                $query->where('address', 'like', '%'.$address.'%');
-            })
-            ->orderBy('name')
-            ->get();
-    });
-
-    return view('inicio', compact('barbershops', 'name', 'address'));
-})->name('inicio');
+Route::get('/', [InicioController::class, 'index'])->name('inicio');
 
 Route::get('/inicio', function () {
     return redirect()->route('inicio');

@@ -17,8 +17,8 @@
     <body class="eb-body">
         <nav class="app-nav sticky top-0 z-50">
   <div class="w-full px-4 sm:px-6 lg:px-8">
-    <div class="flex justify-between h-16 items-center">
-      <a href="{{ route('inicio') }}">
+    <div class="grid h-16 grid-cols-[1fr_auto_1fr] items-center gap-4">
+      <a href="{{ route('inicio') }}" class="justify-self-start">
       <div class="flex items-center gap-2">
         <div class="brand-mark p-2">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.121 14.121L19 19m-7-7l7-7m-7 7l-2.879 2.879M12 12L9.121 9.121m0 5.758a3 3 0 11-4.243 4.243 3 3 0 014.243-4.243z"></path></svg>
@@ -31,21 +31,23 @@
         @php($ownedBarbershop = auth()->user()->barbershop)
       @endauth
 
-      <div class="hidden md:flex items-center space-x-6">
-        <a href="{{ route('inicio') }}" class="text-sm font-medium">Explorar</a>
-        
-        @guest
-          <a href="{{ route('login') }}" class="text-sm font-medium">Iniciar Sesión</a>
-          <a href="{{ route('register') }}" class="text-sm font-medium">Registrarse</a>
-        @endguest
-        
+      <div class="hidden justify-self-center md:flex items-center justify-center gap-4">
+        <a href="{{ route('inicio') }}" class="nav-link-button text-sm font-medium transition-colors">Explorar</a>
+
         @auth
-          <a href="{{ route('appointments.my') }}" class="text-sm font-medium">Mis Citas</a>
+          <a href="{{ route('appointments.my') }}" class="nav-link-button text-sm font-medium transition-colors">Mis Citas</a>
         @endauth
       </div>
 
+      @guest
+        <div class="hidden justify-self-end md:flex items-center gap-3">
+          <a href="{{ route('login') }}" class="nav-link-button text-sm font-medium transition-colors">Iniciar Sesión</a>
+          <a href="{{ route('register') }}" class="nav-link-button text-sm font-medium transition-colors">Registrarse</a>
+        </div>
+      @endguest
+
       @auth
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-3 justify-self-end">
           <div class="hidden md:flex items-center gap-3">
             @if($ownedBarbershop)
               <a href="{{ route('barbershops.dashboard') }}" class="nav-action inline-block px-3 py-1 text-sm font-medium transition-colors">Gestionar mi barbería</a>

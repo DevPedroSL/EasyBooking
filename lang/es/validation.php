@@ -176,6 +176,9 @@ return [
         'password' => [
             'confirmed' => 'Las contraseñas no coinciden.',
         ],
+        'phone' => [
+            'regex' => 'El teléfono solo puede contener números.',
+        ],
     ],
 
     /*
