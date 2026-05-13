@@ -27,6 +27,10 @@
       </div>
       </a>
 
+      @auth
+        @php($ownedBarbershop = auth()->user()->barbershop)
+      @endauth
+
       <div class="hidden md:flex items-center space-x-6">
         <a href="{{ route('inicio') }}" class="text-sm font-medium">Explorar</a>
         
@@ -36,42 +40,38 @@
         @endguest
         
         @auth
-          @php($ownedBarbershop = auth()->user()->barbershop)
           <a href="{{ route('appointments.my') }}" class="text-sm font-medium">Mis Citas</a>
-          @if($ownedBarbershop)
-            <a href="{{ route('barbershops.dashboard') }}" class="nav-action inline-block px-3 py-1 text-sm font-medium transition-colors">Mi barbería</a>
-          @elseif(auth()->user()->role !== 'admin')
-            <a href="{{ route('barbershop-requests.create') }}" class="nav-action inline-block px-3 py-1 text-sm font-medium transition-colors">Crear barbería</a>
-          @endif
-          @if(auth()->user()->role === 'admin')
-            <a href="{{ route('admin.dashboard') }}" class="nav-action inline-block px-3 py-1 text-sm font-medium transition-colors">Panel Admin</a>
-          @endif
         @endauth
       </div>
 
       @auth
-        <div class="relative">
-          <button id="user-menu-button" class="flex items-center gap-2 text-sm font-medium" onclick="toggleDropdown()">
-            <img class="h-8 w-8 rounded-full border border-violet-200 object-cover" src="{{ auth()->user()->avatar_url }}" alt="Perfil">
-            <span>{{ auth()->user()->name }}</span>
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-          </button>
-          <div id="user-dropdown" class="user-dropdown hidden absolute right-0 mt-2 w-56 shadow-lg z-50">
-            <a href="{{ route('profile.edit') }}" class="block px-4 py-2 text-sm">Editar Perfil</a>
+        <div class="flex items-center gap-3">
+          <div class="hidden md:flex items-center gap-3">
             @if($ownedBarbershop)
-              <a href="{{ route('barbershops.dashboard') }}" class="block px-4 py-2 text-sm">Mi barbería</a>
+              <a href="{{ route('barbershops.dashboard') }}" class="nav-action inline-block px-3 py-1 text-sm font-medium transition-colors">Gestionar mi barbería</a>
             @elseif(auth()->user()->role !== 'admin')
-              <a href="{{ route('barbershop-requests.create') }}" class="block px-4 py-2 text-sm">Crear barbería</a>
+              <a href="{{ route('barbershop-requests.create') }}" class="nav-action inline-block px-3 py-1 text-sm font-medium transition-colors">Crear nueva barbería</a>
             @endif
             @if(auth()->user()->role === 'admin')
-              <a href="{{ route('admin.dashboard') }}" class="block px-4 py-2 text-sm">Panel Admin</a>
+              <a href="{{ route('admin.dashboard') }}" class="nav-action inline-block px-3 py-1 text-sm font-medium transition-colors">Administrar sitio</a>
             @endif
-            <form method="POST" action="{{ route('logout') }}">
-              @csrf
-              <button type="submit" class="block w-full text-left px-4 py-2 text-sm">
-                Cerrar Sesión
-              </button>
-            </form>
+          </div>
+
+          <div class="relative">
+            <button id="user-menu-button" class="flex items-center gap-2 text-sm font-medium" onclick="toggleDropdown()">
+              <img class="h-8 w-8 rounded-full border border-violet-200 object-cover" src="{{ auth()->user()->avatar_url }}" alt="Perfil">
+              <span>{{ auth()->user()->name }}</span>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </button>
+            <div id="user-dropdown" class="user-dropdown hidden absolute right-0 mt-2 w-56 shadow-lg z-50">
+              <a href="{{ route('profile.edit') }}" class="block px-4 py-2 text-sm">Editar Perfil</a>
+              <form method="POST" action="{{ route('logout') }}">
+                @csrf
+                <button type="submit" class="block w-full text-left px-4 py-2 text-sm">
+                  Cerrar Sesión
+                </button>
+              </form>
+            </div>
           </div>
         </div>
       @endauth
@@ -94,152 +94,6 @@
           </div>
         </footer>
 
-        <div id="confirm-modal" class="fixed inset-0 z-[100] hidden" aria-hidden="true">
-          <div class="absolute inset-0 bg-slate-950/50" data-confirm-close></div>
-          <div class="absolute inset-0 flex items-center justify-center p-4">
-            <div class="w-[min(100%,28rem)] rounded-3xl border-4 border-red-600 bg-white p-6 shadow-2xl">
-              <p class="text-sm font-black uppercase tracking-[0.2em] text-red-600">Confirmar accion</p>
-              <h2 id="confirm-modal-title" class="mt-3 text-2xl font-black text-slate-900">Antes de continuar</h2>
-              <p id="confirm-modal-message" class="mt-3 text-sm leading-6 text-slate-600">
-                Esta accion no se puede deshacer.
-              </p>
-
-              <div class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-                <button
-                  type="button"
-                  id="confirm-modal-cancel"
-                  class="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-100"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  id="confirm-modal-submit"
-                  class="inline-flex min-h-11 items-center justify-center rounded-xl bg-red-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-red-700"
-                >
-                  Confirmar
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <script>
-        function toggleDropdown(dropdownId = 'user-dropdown') {
-          const dropdown = document.getElementById(dropdownId);
-          if (!dropdown) {
-            return;
-          }
-
-          dropdown.classList.toggle('hidden');
-        }
-
-        document.addEventListener('click', function(event) {
-          [
-            ['user-menu-button', 'user-dropdown'],
-          ].forEach(function ([buttonId, dropdownId]) {
-            const dropdown = document.getElementById(dropdownId);
-            const button = document.getElementById(buttonId);
-
-            if (button && dropdown && !button.contains(event.target) && !dropdown.contains(event.target)) {
-              dropdown.classList.add('hidden');
-            }
-          });
-        });
-
-        (() => {
-          const modal = document.getElementById('confirm-modal');
-          const title = document.getElementById('confirm-modal-title');
-          const message = document.getElementById('confirm-modal-message');
-          const confirmButton = document.getElementById('confirm-modal-submit');
-          const cancelButton = document.getElementById('confirm-modal-cancel');
-          const closeTriggers = modal ? modal.querySelectorAll('[data-confirm-close]') : [];
-          let activeForm = null;
-          let activeSubmitter = null;
-          let activeConfirmSource = null;
-
-          if (!modal || !title || !message || !confirmButton || !cancelButton) {
-            return;
-          }
-
-          const closeModal = () => {
-            modal.classList.add('hidden');
-            modal.setAttribute('aria-hidden', 'true');
-            document.body.classList.remove('overflow-hidden');
-            activeForm = null;
-            activeSubmitter = null;
-            activeConfirmSource = null;
-          };
-
-          const openModal = (form, confirmSource, submitter = null) => {
-            activeForm = form;
-            activeSubmitter = submitter;
-            activeConfirmSource = confirmSource;
-            title.textContent = confirmSource.dataset.confirmTitle || 'Antes de continuar';
-            message.textContent = confirmSource.dataset.confirmMessage || 'Esta accion no se puede deshacer.';
-            confirmButton.textContent = confirmSource.dataset.confirmButton || 'Confirmar';
-            modal.classList.remove('hidden');
-            modal.setAttribute('aria-hidden', 'false');
-            document.body.classList.add('overflow-hidden');
-          };
-
-          document.addEventListener('submit', (event) => {
-            const form = event.target;
-
-            if (!(form instanceof HTMLFormElement)) {
-              return;
-            }
-
-            if (form.dataset.confirmed === 'true') {
-              delete form.dataset.confirmed;
-              return;
-            }
-
-            const submitter = event.submitter instanceof HTMLElement ? event.submitter : null;
-            const confirmSource = submitter && submitter.dataset.confirmMessage
-              ? submitter
-              : (form.dataset.confirmMessage ? form : null);
-
-            if (!confirmSource) {
-              return;
-            }
-
-            event.preventDefault();
-            openModal(form, confirmSource, submitter);
-          });
-
-          confirmButton.addEventListener('click', () => {
-            if (!activeForm) {
-              closeModal();
-              return;
-            }
-
-            activeForm.dataset.confirmed = 'true';
-            if (activeSubmitter && typeof activeForm.requestSubmit === 'function') {
-              activeForm.requestSubmit(activeSubmitter);
-            } else {
-              if (activeSubmitter && activeSubmitter.name) {
-                const hiddenInput = document.createElement('input');
-                hiddenInput.type = 'hidden';
-                hiddenInput.name = activeSubmitter.name;
-                hiddenInput.value = activeSubmitter.value;
-                activeForm.appendChild(hiddenInput);
-              }
-
-              activeForm.submit();
-            }
-            closeModal();
-          });
-
-          cancelButton.addEventListener('click', closeModal);
-          closeTriggers.forEach((trigger) => trigger.addEventListener('click', closeModal));
-
-          document.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape' && !modal.classList.contains('hidden')) {
-              closeModal();
-            }
-          });
-        })();
-        </script>
+        @include('layouts.partials.confirm-modal')
     </body>
 </html>
