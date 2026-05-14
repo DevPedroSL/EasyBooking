@@ -5,19 +5,19 @@
 @section('header_title', 'Solicitud aceptada')
 
 @section('content')
-    <div class="content">
-        <p>Hola {{ $requester->name }},</p>
+    <p>Hola {{ $requester->name }},</p>
 
-        <p>Tu solicitud para crear la barberia <strong>{{ $barbershop?->name ?? $barbershopRequest->name }}</strong> ha sido aceptada.</p>
+    <p>Tu solicitud para crear la barbería <strong>{{ $barbershop?->name ?? $barbershopRequest->name }}</strong> ha sido aceptada.</p>
 
-        <div class="details">
-            <h3>Datos de tu barberia:</h3>
-            <p><strong>Nombre:</strong> {{ $barbershop?->name ?? $barbershopRequest->name }}</p>
-            <p><strong>Direccion:</strong> {{ $barbershop?->address ?? $barbershopRequest->address }}</p>
-            <p><strong>Telefono:</strong> {{ $barbershop?->phone ?? $barbershopRequest->phone }}</p>
-            <p><strong>Visibilidad:</strong> {{ ($barbershop?->visibility ?? $barbershopRequest->visibility) === 'public' ? 'Publica' : 'Privada' }}</p>
-        </div>
+    <div class="details">
+        <h3>Datos de tu barbería</h3>
+        <p><strong>Nombre:</strong> {{ $barbershop?->name ?? $barbershopRequest->name }}</p>
+        <p><strong>Dirección:</strong> {{ $barbershop?->address ?? $barbershopRequest->address }}</p>
+        <p><strong>Teléfono:</strong> {{ $barbershop?->phone ?? $barbershopRequest->phone }}</p>
+        <p><strong>Visibilidad:</strong> {{ ($barbershop?->visibility ?? $barbershopRequest->visibility) === 'public' ? 'Pública' : 'Privada' }}</p>
+    </div>
 
-        <p>Ya puedes entrar en tu panel de barberia para completar fotos, horarios y servicios. La barberia empieza como privada y puedes publicarla cuando este lista.</p>
+    <div class="notice">
+        Ya puedes entrar en tu panel de barbería para completar fotos, horarios y servicios. La barbería empieza como privada y puedes publicarla cuando esté lista.
     </div>
 @endsection

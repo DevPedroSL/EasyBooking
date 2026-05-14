@@ -9,7 +9,7 @@
     <p>Has recibido una nueva reserva de cita en tu barbería <strong>{{ $barbershop->name }}</strong>.</p>
 
     <div class="appointment-details">
-        <h3>Detalles de la cita:</h3>
+        <h3>Detalles de la cita</h3>
         <p><strong>Cliente:</strong> {{ $client->name }}</p>
         <p><strong>Email:</strong> {{ $client->email }}</p>
         <p><strong>Teléfono:</strong> {{ $client->phone }}</p>
@@ -22,5 +22,7 @@
     </div>
 
 
-    <p>Por favor, revisa tu panel de barbero para gestionar esta cita.</p>
+    <div class="notice">
+        Por favor, revisa tu panel de barbero para gestionar esta cita.
+    </div>
 @endsection
