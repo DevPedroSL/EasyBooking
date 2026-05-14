@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Services\StoredImageService;
 use App\Support\SafeMail;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
@@ -32,6 +33,30 @@ class BarbershopController extends Controller
     private function redirectWithoutBarbershop()
     {
         return redirect()->route('inicio')->with('error', 'No tienes una barbería asignada.');
+    }
+
+    public function show(string $name)
+    {
+        $decodedName = urldecode($name);
+        $cacheVersion = Cache::get('public_barbershops_version', '1');
+        $cacheKey = 'barbershop_detail:'.$cacheVersion.':'.md5($decodedName);
+
+        $barbershop = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($decodedName) {
+            $barbershop = Barbershop::where('name', $decodedName)
+                ->with([
+                    'barber',
+                    'services' => fn ($query) => $query->orderBy('name'),
+                ])
+                ->firstOrFail();
+
+            $barbershop->services->each->setRelation('barbershop', $barbershop);
+
+            return $barbershop;
+        });
+
+        abort_unless($barbershop->isVisibleTo(auth()->user()), 404);
+
+        return view('barbershop', compact('barbershop'));
     }
 
     public function createRequest()

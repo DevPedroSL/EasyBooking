@@ -10,6 +10,18 @@
         </div>
     </div>
 
+    @if(session('success'))
+        <div class="mb-6 rounded border border-green-200 bg-green-50 px-4 py-3 font-semibold text-green-800">
+            {{ session('success') }}
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="mb-6 rounded border border-red-200 bg-red-50 px-4 py-3 font-semibold text-red-800">
+            {{ session('error') }}
+        </div>
+    @endif
+
     <div class="space-y-6">
         <section class="eb-panel p-8">
             <h2 class="mt-2 text-3xl font-black text-gray-900">Barberías</h2>

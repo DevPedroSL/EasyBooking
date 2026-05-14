@@ -33,28 +33,7 @@ Route::get('/appointments/{appointment}', [AppointmentController::class, 'show']
 Route::patch('/appointments/{appointment}/cancel', [AppointmentController::class, 'cancel'])->name('appointments.cancel')->middleware('auth');
 Route::patch('/appointments/{appointment}/status', [AppointmentController::class, 'updateStatus'])->name('appointments.updateStatus')->middleware('auth');
 
-Route::get('/barbershop/{name}', function ($name) {
-    $decodedName = urldecode($name);
-    $cacheVersion = Cache::get('public_barbershops_version', '1');
-    $cacheKey = 'barbershop_detail:'.$cacheVersion.':'.md5($decodedName);
-
-    $barbershop = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($decodedName) {
-        $barbershop = Barbershop::where('name', $decodedName)
-            ->with([
-                'barber',
-                'services' => fn ($query) => $query->orderBy('name'),
-            ])
-            ->firstOrFail();
-
-        $barbershop->services->each->setRelation('barbershop', $barbershop);
-
-        return $barbershop;
-    });
-
-    abort_unless($barbershop->isVisibleTo(auth()->user()), 404);
-
-    return view('barbershop', compact('barbershop'));
-})->name('barbershop');
+Route::get('/barbershop/{name}', [BarbershopController::class, 'show'])->name('barbershop');
 
 Route::get('/dashboard', function () {
     return redirect()->route('inicio');
