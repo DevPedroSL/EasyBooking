@@ -9,8 +9,8 @@
 
     <p>¡Buenas noticias! Tu cita en <strong>{{ $barbershop->name }}</strong> ha sido aceptada.</p>
 
-    <div class="appointment-details">
-        <h3>Detalles de tu cita</h3>
+    <div class="appointment-details" style="margin:24px 0;padding:20px;border:1px solid #e5e7eb;border-radius:14px;background-color:#f9fafb;">
+        <h3 style="margin:0 0 14px;color:#111827;font-size:18px;">Detalles de tu cita</h3>
         <p><strong>Barbería:</strong> {{ $barbershop->name }}</p>
         <p><strong>Dirección:</strong> {{ $barbershop->address }}</p>
         <p><strong>Servicio:</strong> {{ $service->name }}</p>
@@ -24,7 +24,7 @@
         @endif
     </div>
 
-    <div class="notice">
+    <div class="notice" style="margin:22px 0;padding:14px 16px;border-left:4px solid #10B981;border-radius:10px;background-color:#f8fafc;">
         Te esperamos en la barbería a la hora acordada.
     </div>
 

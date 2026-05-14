@@ -9,8 +9,8 @@
 
     <p>Lamentamos informarte que tu cita en <strong>{{ $barbershop->name }}</strong> ha sido rechazada.</p>
 
-    <div class="appointment-details">
-        <h3>Detalles de la cita solicitada</h3>
+    <div class="appointment-details" style="margin:24px 0;padding:20px;border:1px solid #e5e7eb;border-radius:14px;background-color:#f9fafb;">
+        <h3 style="margin:0 0 14px;color:#111827;font-size:18px;">Detalles de la cita solicitada</h3>
         <p><strong>Barbería:</strong> {{ $barbershop->name }}</p>
         <p><strong>Servicio:</strong> {{ $service->name }}</p>
         <p><strong>Fecha solicitada:</strong> {{ \Carbon\Carbon::parse($appointment->appointment_date)->format('d/m/Y') }}</p>
@@ -25,7 +25,7 @@
 
     <p>No te preocupes, puedes buscar otros horarios disponibles o contactar directamente con la barbería.</p>
 
-    <div class="notice">
+    <div class="notice" style="margin:22px 0;padding:14px 16px;border-left:4px solid #EF4444;border-radius:10px;background-color:#f8fafc;">
         Si tienes alguna pregunta, puedes contactar con el barbero al teléfono: {{ $barbershop->phone }}.
     </div>
 

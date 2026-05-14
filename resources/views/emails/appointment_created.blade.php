@@ -1,6 +1,6 @@
 @extends('layouts.email')
 
-@section('title', 'Nueva solitiud de cita')
+@section('title', 'Nueva solicitud de cita')
 @section('header_color', '#4F46E5')
 @section('header_title', 'Nueva solicitud de cita')
 
@@ -8,8 +8,8 @@
     <p>Hola {{ $barbershop->barber->name }},</p>
     <p>Has recibido una nueva reserva de cita en tu barbería <strong>{{ $barbershop->name }}</strong>.</p>
 
-    <div class="appointment-details">
-        <h3>Detalles de la cita</h3>
+    <div class="appointment-details" style="margin:24px 0;padding:20px;border:1px solid #e5e7eb;border-radius:14px;background-color:#f9fafb;">
+        <h3 style="margin:0 0 14px;color:#111827;font-size:18px;">Detalles de la cita</h3>
         <p><strong>Cliente:</strong> {{ $client->name }}</p>
         <p><strong>Email:</strong> {{ $client->email }}</p>
         <p><strong>Teléfono:</strong> {{ $client->phone }}</p>
@@ -22,7 +22,7 @@
     </div>
 
 
-    <div class="notice">
+    <div class="notice" style="margin:22px 0;padding:14px 16px;border-left:4px solid #4F46E5;border-radius:10px;background-color:#f8fafc;">
         Por favor, revisa tu panel de barbero para gestionar esta cita.
     </div>
 @endsection
