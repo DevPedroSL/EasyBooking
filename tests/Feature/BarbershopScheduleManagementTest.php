@@ -77,18 +77,18 @@ class BarbershopScheduleManagementTest extends TestCase
             'barbershop_id' => $barbershop->id,
             'day_of_week' => 1,
         ]);
-        $this->assertDatabaseHas('schedules', [
-            'barbershop_id' => $barbershop->id,
-            'day_of_week' => 4,
-            'start_time' => '16:00:00',
-            'end_time' => '21:00:00',
-        ]);
-        $this->assertDatabaseHas('schedules', [
-            'barbershop_id' => $barbershop->id,
-            'day_of_week' => 2,
-            'start_time' => '15:30:00',
-            'end_time' => '19:00:00',
-        ]);
+        $storedSchedules = $barbershop->schedules()->get();
+
+        $this->assertTrue($storedSchedules->contains(
+            fn (Schedule $schedule) => $schedule->day_of_week === 4
+                && substr($schedule->start_time, 0, 5) === '16:00'
+                && substr($schedule->end_time, 0, 5) === '21:00'
+        ));
+        $this->assertTrue($storedSchedules->contains(
+            fn (Schedule $schedule) => $schedule->day_of_week === 2
+                && substr($schedule->start_time, 0, 5) === '15:30'
+                && substr($schedule->end_time, 0, 5) === '19:00'
+        ));
     }
 
     public function test_barbershop_schedule_requires_closing_after_opening(): void
