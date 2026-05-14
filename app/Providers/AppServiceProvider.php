@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Policies\BarbershopPolicy;
 use App\Policies\UserPolicy;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -26,6 +27,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if (is_string(config('view.compiled'))) {
+            File::ensureDirectoryExists(config('view.compiled'), 0775);
+        }
+
         Gate::policy(Barbershop::class, BarbershopPolicy::class);
         Gate::policy(User::class, UserPolicy::class);
 
