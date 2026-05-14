@@ -132,6 +132,59 @@ body.eb-body {
     color: var(--eb-ink);
 }
 
+.mobile-nav-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border: 1px solid rgba(143, 106, 216, 0.58);
+    border-radius: 8px;
+    color: #edf7f1;
+    transition: background-color 160ms ease, border-color 160ms ease;
+}
+
+.mobile-nav-toggle:hover {
+    border-color: rgba(217, 199, 255, 0.9);
+    background: rgba(143, 106, 216, 0.12);
+}
+
+.mobile-nav-menu {
+    display: grid;
+    gap: 0.55rem;
+    padding: 0 0 0.9rem;
+}
+
+.mobile-nav-link {
+    display: flex;
+    align-items: center;
+    min-height: 2.75rem;
+    border: 1px solid rgba(143, 106, 216, 0.42);
+    border-radius: 8px;
+    padding: 0.65rem 0.85rem;
+    color: #edf7f1;
+    font-size: 0.95rem;
+    font-weight: 800;
+    line-height: 1.15;
+}
+
+.mobile-nav-link:hover {
+    border-color: rgba(217, 199, 255, 0.9);
+    background: rgba(143, 106, 216, 0.12);
+    color: #d9c7ff;
+}
+
+.mobile-nav-link--featured {
+    background: var(--eb-gold);
+    border-color: transparent;
+    color: var(--eb-ink);
+}
+
+.mobile-nav-link--featured:hover {
+    background: #7d56cc;
+    color: var(--eb-ink);
+}
+
 .user-dropdown {
     background: var(--eb-surface);
     border: 1px solid rgba(24, 33, 30, 0.12);

@@ -17,6 +17,8 @@ class DatabaseSeeder extends Seeder
         $this->call([
             UserSeeder::class,
             BarbershopSeeder::class,
+            BarbershopImageSeeder::class,
+            AppointmentsSeeder::class,
         ]);
     }
 }

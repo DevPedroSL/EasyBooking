@@ -5,6 +5,11 @@ window.toggleDropdown = function toggleDropdown(dropdownId = 'user-dropdown') {
     }
 
     dropdown.classList.toggle('hidden');
+
+    const button = document.querySelector(`[aria-controls="${dropdownId}"]`) || document.getElementById('user-menu-button');
+    if (button) {
+        button.setAttribute('aria-expanded', String(!dropdown.classList.contains('hidden')));
+    }
 };
 
 document.addEventListener('click', (event) => {
@@ -16,6 +21,7 @@ document.addEventListener('click', (event) => {
 
         if (button && dropdown && !button.contains(event.target) && !dropdown.contains(event.target)) {
             dropdown.classList.add('hidden');
+            button.setAttribute('aria-expanded', 'false');
         }
     });
 });
