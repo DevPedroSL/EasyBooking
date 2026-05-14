@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Mail\AppointmentCreated;
 use App\Models\Appointment;
 use App\Models\Barbershop;
 use App\Models\Schedule;
@@ -156,6 +157,42 @@ class AppointmentBookingSecurityTest extends TestCase
             ->actingAs($client)
             ->get(route('appointments.pdf', $appointment))
             ->assertForbidden();
+    }
+
+    public function test_appointment_created_email_uses_current_html_layout(): void
+    {
+        $client = User::factory()->customer()->create([
+            'name' => 'Customer User',
+            'email' => 'customer@example.com',
+            'phone' => '600000005',
+        ]);
+        $barber = User::factory()->barber()->create([
+            'name' => 'Barber User',
+        ]);
+        $barbershop = Barbershop::factory()->create([
+            'barber_id' => $barber->id,
+            'name' => 'Barberia 1',
+        ]);
+        $service = Service::factory()->create([
+            'barbershop_id' => $barbershop->id,
+            'name' => 'Tinte',
+        ]);
+        $appointment = Appointment::factory()->create([
+            'client_id' => $client->id,
+            'barbershop_id' => $barbershop->id,
+            'service_id' => $service->id,
+            'appointment_date' => '2026-05-28',
+            'start_time' => '20:00:00',
+            'end_time' => '21:00:00',
+        ]);
+
+        $html = (new AppointmentCreated($appointment))->render();
+
+        $this->assertStringContainsString('EasyBooking', $html);
+        $this->assertStringContainsString('role="presentation"', $html);
+        $this->assertStringContainsString('border-radius:18px', $html);
+        $this->assertStringContainsString('Detalles de la cita</h3>', $html);
+        $this->assertStringNotContainsString('Detalles de la cita:</h3>', $html);
     }
 
     private function createBookableScenarioWithExistingAppointment(string $existingStatus): array
