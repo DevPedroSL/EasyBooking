@@ -127,6 +127,7 @@
             <div class="app-footer__actions">
               <a href="{{ route('contact') }}" class="app-footer__button">Contáctanos</a>
               <a href="{{ route('legal') }}" class="app-footer__button">Privacidad, términos y uso</a>
+              <a href="{{ asset('docs/manual-usuario-easy-booking.pdf') }}" target="_blank" rel="noopener noreferrer" class="app-footer__button">Manual de usuario</a>
             </div>
           </div>
         </footer>
